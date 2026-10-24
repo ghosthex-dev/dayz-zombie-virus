@@ -1,0 +1,19 @@
+ImageWidgetClass ZV_InfectionBadge {
+ visible 0
+ ignorepointer 1
+ color 0.863 0.863 0.863 1
+ position 0 0
+ size 35 35
+ halign right_ref
+ valign bottom_ref
+ hexactpos 0
+ vexactpos 1
+ hexactsize 1
+ vexactsize 1
+ image0 "ZombieVirus/data/zv_biohazard_ca.paa"
+ mode blend
+ "src alpha" 1
+ "clamp mode" clamp
+ filter 1
+ "stretch mode" stretch_w_h
+}

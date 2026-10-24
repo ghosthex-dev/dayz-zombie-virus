@@ -1,0 +1,10 @@
+*.pbo
+*.bisign
+*.bikey
+*.biprivatekey
+/@ZombieVirus/
+/build/
+/_test/
+__pycache__/
+*.log
+*.rpt
