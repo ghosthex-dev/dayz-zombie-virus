@@ -36,9 +36,13 @@ PLAY_SETTINGS = {
     'InfectionChance': 1.0,
     'InfectionChanceIfWounded': 1.0,
     'BlockedHitMultiplier': 1.0,
-    'IncubationMinutes': 5.0,
+    'IncubationMinutes': 3.0,
     'CureImmunityMinutes': 1.0,
     'TurnDelaySeconds': 5.0,
+    'PlayableZombie': True,
+    'PlayableZombieDurationMinutes': 20.0,
+    'PlayableZombieIgnoredByAI': True,
+    'PlayableZombieInfiniteStamina': True,
 }
 ANTIVIRAL_LINE = '\t\t\titemEnt = itemClothing.GetInventory().CreateInInventory( "ZV_Antiviral" );  // zvtest\n'
 
@@ -99,7 +103,7 @@ def join():
     if running('DayZ_x64.exe'):
         print('the game is already running; close it, then join 127.0.0.1:%d with -mod=%s' % (PORT, MOD))
         return
-    exe = 'DayZ_BE.exe' if os.path.isfile(os.path.join(game, 'DayZ_BE.exe')) else 'DayZ_x64.exe'
+    exe = 'DayZ_x64.exe' if os.path.isfile(os.path.join(game, 'DayZ_x64.exe')) else 'DayZ_BE.exe'
     start_detached([os.path.join(game, exe), '-connect=127.0.0.1', '-port=%d' % PORT, '-mod=' + MOD,
                     '-name=ZVTester', '-nosplash', '-skipIntro', '-noBenchmark', '-window', '-nopause'], game)
     print('client started (%s)' % exe)
