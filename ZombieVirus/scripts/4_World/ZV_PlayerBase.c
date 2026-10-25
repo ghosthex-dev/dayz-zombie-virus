@@ -523,7 +523,7 @@ modded class PlayerBase
 	protected void ZV_Turn()
 	{
 		ZV_Settings s = ZV_Virus.Get().GetSettings();
-		if (s.PlayableZombie && (GetIdentity() || ZV_TestState.s_On))
+		if (s.PlayableZombie)
 		{
 			ZV_BecomeFeral();
 			return;

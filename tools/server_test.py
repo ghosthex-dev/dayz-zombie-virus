@@ -101,12 +101,19 @@ def set_play_mode(play):
 def join():
     game = find_app('DayZ', 'DayZ_x64.exe')
     if running('DayZ_x64.exe'):
-        print('the game is already running; close it, then join 127.0.0.1:%d with -mod=%s' % (PORT, MOD))
+        print('the game is already running; connect to 127.0.0.1:%d with -mod=@ZombieVirus' % PORT)
         return
-    exe = 'DayZ_x64.exe' if os.path.isfile(os.path.join(game, 'DayZ_x64.exe')) else 'DayZ_BE.exe'
-    start_detached([os.path.join(game, exe), '-connect=127.0.0.1', '-port=%d' % PORT, '-mod=' + MOD,
-                    '-name=ZVTester', '-nosplash', '-skipIntro', '-noBenchmark', '-window', '-nopause'], game)
-    print('client started (%s)' % exe)
+    steam = r'C:\Program Files (x86)\Steam\steam.exe'
+    mod_arg = '@ZombieVirus' if os.path.isdir(os.path.join(game, '@ZombieVirus')) else MOD
+    args = ['-connect=127.0.0.1', '-port=%d' % PORT, '-mod=' + mod_arg, '-name=ZVTester', '-nosplash', '-skipIntro', '-nopause']
+    if os.path.isfile(steam):
+        cmd = [steam, '-applaunch', '221100'] + args
+        start_detached(cmd, game)
+        print('client launched via Steam (AppId 221100)')
+    else:
+        exe = 'DayZ_BE.exe' if os.path.isfile(os.path.join(game, 'DayZ_BE.exe')) else 'DayZ_x64.exe'
+        start_detached([os.path.join(game, exe)] + args, game)
+        print('client started (%s)' % exe)
 
 
 def build_test_mod():
@@ -220,6 +227,10 @@ def main():
         print('server running on 127.0.0.1:%d (pid %d) with play settings' % (PORT, proc.pid))
         if '--join' in argv:
             join()
+        try:
+            proc.wait()
+        except KeyboardInterrupt:
+            subprocess.run(['taskkill', '/PID', str(proc.pid), '/T', '/F'], capture_output=True)
         return 0
     m = re.search(r'\[ZV\]\[TEST\] DONE pass=(\d+) fail=(\d+)', logs)
     ok = bool(m) and m.group(2) == '0' and not re.search(ERRORS, logs)
