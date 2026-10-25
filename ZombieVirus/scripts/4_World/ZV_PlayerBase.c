@@ -13,11 +13,14 @@ modded class PlayerBase
 	protected float m_ZV_SymptomTimer;
 	protected bool m_ZV_Turning;
 	protected int m_ZV_HudStage = -1;	// synced copy of m_ZV_Stage for the owner's HUD
+	protected bool m_ZV_Feral;
+	protected float m_ZV_FeralTimer;
 
 	override void Init()
 	{
 		super.Init();
-		RegisterNetSyncVariableInt("m_ZV_HudStage", -1, 3);
+		RegisterNetSyncVariableInt("m_ZV_HudStage", -1, 4);
+		RegisterNetSyncVariableBool("m_ZV_Feral");
 	}
 
 	// Client side: stage shown on the HUD badge, -1 = not infected.
@@ -31,7 +34,30 @@ modded class PlayerBase
 		int zvBleedingBefore = GetBleedingSourceCount();
 		super.EEHitBy(damageResult, damageType, source, component, dmgZone, ammo, modelPos, speedCoef);
 
-		if (!g_Game.IsServer() || !ZombieBase.Cast(source))
+		if (!g_Game.IsServer() || !IsAlive())
+			return;
+
+		PlayerBase feralAttacker = PlayerBase.Cast(source);
+		if (feralAttacker && feralAttacker.ZV_IsFeral())
+		{
+			ZV_Settings settings = ZV_Virus.Get().GetSettings();
+			ZV_Infect();
+			if (damageResult)
+			{
+				float extraDmg = damageResult.GetHighestDamage("Health") * (settings.PlayableZombieDamageMultiplier - 1.0);
+				if (extraDmg > 0)
+					AddHealth("", "Health", -extraDmg);
+			}
+			BleedingSourcesManagerServer bm = GetBleedingManagerServer();
+			if (bm)
+			{
+				if (!bm.AttemptAddBleedingSource(component))
+					bm.AttemptAddBleedingSourceBySelection("Pelvis");
+			}
+			return;
+		}
+
+		if (!ZombieBase.Cast(source))
 			return;
 		// a blocked light attack only plays an animation
 		if (ammo == "Dummy_Light")
@@ -77,7 +103,12 @@ modded class PlayerBase
 		if (g_Game.IsServer())
 		{
 			ZV_Settings s = ZV_Virus.Get().GetSettings();
-			if (!m_ZV_Turning && m_ZV_Infected && m_ZV_Stage >= s.RiseOnDeathMinStage)
+			if (m_ZV_Feral)
+			{
+				Print("[ZV] Feral player " + ZV_Name() + " was slain");
+				m_ZV_Feral = false;
+			}
+			else if (!m_ZV_Turning && m_ZV_Infected && m_ZV_Stage >= s.RiseOnDeathMinStage)
 			{
 				m_ZV_Turning = true;
 				vector zvOri = GetOrientation();
@@ -125,10 +156,20 @@ modded class PlayerBase
 		return m_ZV_Turning;
 	}
 
+	bool ZV_IsFeral()
+	{
+		return m_ZV_Feral;
+	}
+
+	float ZV_GetFeralTimer()
+	{
+		return m_ZV_FeralTimer;
+	}
+
 	// Rolls the infection chance for one zombie hit. Returns true when it infected the player.
 	bool ZV_OnZombieHit(bool blocked, bool wounded)
 	{
-		if (!IsAlive() || m_ZV_Infected || m_ZV_Turning || m_ZV_Immunity > 0)
+		if (!IsAlive() || m_ZV_Infected || m_ZV_Turning || m_ZV_Feral || m_ZV_Immunity > 0)
 			return false;
 		ZV_Settings s = ZV_Virus.Get().GetSettings();
 		float chance = s.InfectionChance;
@@ -157,7 +198,7 @@ modded class PlayerBase
 	// Antiviral injection: kills the virus at any stage and gives temporary immunity.
 	void ZV_Cure()
 	{
-		if (!g_Game.IsServer() || m_ZV_Turning || !IsAlive())
+		if (!g_Game.IsServer() || m_ZV_Turning || m_ZV_Feral || !IsAlive())
 			return;
 		bool wasInfected = m_ZV_Infected;
 		ZV_ClearInfection();
@@ -176,10 +217,18 @@ modded class PlayerBase
 	}
 
 	// Restores a saved state without messages.
-	void ZV_SetState(bool infected, float progress, float immunity)
+	void ZV_SetState(bool infected, float progress, float immunity, bool feral = false, float feralTimer = 0)
 	{
 		ZV_ClearInfection();
 		m_ZV_Immunity = Math.Max(immunity, 0);
+		if (feral)
+		{
+			m_ZV_Feral = true;
+			m_ZV_HudStage = 4;
+			m_ZV_FeralTimer = feralTimer;
+			SetSynchDirty();
+			return;
+		}
 		if (!infected)
 			return;
 		m_ZV_Infected = true;
@@ -199,6 +248,12 @@ modded class PlayerBase
 				ZV_Virus.Get().Store(this);
 			}
 		}
+		if (m_ZV_Feral)
+		{
+			ZV_FeralTick(dt);
+			return;
+		}
+
 		if (!m_ZV_Infected || m_ZV_Turning || !IsAlive())
 			return;
 
@@ -290,9 +345,12 @@ modded class PlayerBase
 	{
 		ZV_ApplyStageEffects(-1);
 		m_ZV_Infected = false;
+		m_ZV_Feral = false;
+		m_ZV_FeralTimer = 0;
 		m_ZV_Progress = 0;
 		m_ZV_Stage = -1;
 		m_ZV_SymptomTimer = 0;
+		SetSynchDirty();
 	}
 
 	protected void ZV_RollSymptoms()
@@ -334,12 +392,102 @@ modded class PlayerBase
 
 	protected void ZV_Turn()
 	{
+		ZV_Settings s = ZV_Virus.Get().GetSettings();
+		if (s.PlayableZombie && (GetIdentity() || ZV_TestState.s_On))
+		{
+			ZV_BecomeFeral();
+			return;
+		}
+
 		m_ZV_Turning = true;
 		ZV_Notify("You have turned.", "The virus has taken you.");
 		Print("[ZV] " + ZV_Name() + " turned");
 		vector ori = GetOrientation();
 		ZV_Virus.Get().QueueRise(GetPosition(), ori[0], IsMale(), this);
 		SetHealth("", "", 0);
+	}
+
+	void ZV_BecomeFeral()
+	{
+		m_ZV_Feral = true;
+		m_ZV_Turning = false;
+		m_ZV_HudStage = 4;
+		m_ZV_Progress = 1.0;
+		m_ZV_FeralTimer = 0;
+		SetSynchDirty();
+
+		EntityAI inHands = GetItemInHands();
+		if (inHands)
+		{
+			vector m4[4];
+			Math3D.MatrixIdentity4(m4);
+			GameInventory.PrepareDropEntityPos(this, inHands, m4, false, -1);
+			InventoryLocation groundLoc = new InventoryLocation();
+			groundLoc.SetGround(inHands, m4);
+			InventoryLocation srcLoc = new InventoryLocation();
+			if (inHands.GetInventory().GetCurrentInventoryLocation(srcLoc))
+				GameInventory.LocationSyncMoveEntity(srcLoc, groundLoc);
+			if (GetItemInHands() && GetIdentity())
+				ServerDropEntity(inHands);
+		}
+
+		DayZPlayerSyncJunctures.SendKuruRequest(this, 1.0);
+		ZV_Notify("You have turned.", "Your humanity is gone. You are now an infected. Hunt the living.");
+		Print("[ZV] " + ZV_Name() + " became a PLAYABLE FERAL ZOMBIE");
+		ZV_Virus.Get().Store(this);
+		ZV_Virus.Get().Save();
+	}
+
+	protected void ZV_FeralTick(float dt)
+	{
+		ZV_Settings s = ZV_Virus.Get().GetSettings();
+		m_ZV_FeralTimer += dt;
+
+		if (s.PlayableZombieHealthDrainPerMinute > 0)
+			AddHealth("", "Health", -s.PlayableZombieHealthDrainPerMinute * dt / 60);
+
+		m_ZV_SymptomTimer += dt;
+		if (m_ZV_SymptomTimer >= 15)
+		{
+			m_ZV_SymptomTimer = 0;
+			if (Math.RandomFloat01() < 0.4)
+				DayZPlayerSyncJunctures.SendKuruRequest(this, 0.5);
+		}
+
+		if (s.PlayableZombieDurationMinutes > 0 && m_ZV_FeralTimer >= s.PlayableZombieDurationMinutes * 60)
+		{
+			Print("[ZV] Feral body of " + ZV_Name() + " expired");
+			SetHealth("", "", 0);
+		}
+	}
+
+	override bool CanReceiveItemIntoHands(EntityAI item_to_hands)
+	{
+		if (m_ZV_Feral)
+		{
+			if (item_to_hands && item_to_hands.IsMeat())
+				return true;
+			return false;
+		}
+		return super.CanReceiveItemIntoHands(item_to_hands);
+	}
+
+	override bool CanBeTargetedByAI(EntityAI ai)
+	{
+		if (m_ZV_Feral && ZombieBase.Cast(ai) && ZV_Virus.Get().GetSettings().PlayableZombieIgnoredByAI)
+			return false;
+		return super.CanBeTargetedByAI(ai);
+	}
+
+	override bool Consume(PlayerConsumeData data)
+	{
+		if (m_ZV_Feral && data && data.m_Source && data.m_Source.IsMeat())
+		{
+			ZV_Settings settings = ZV_Virus.Get().GetSettings();
+			AddHealth("", "Health", settings.PlayableZombieHealthGainOnFeed);
+			data.m_Agents = 0;
+		}
+		return super.Consume(data);
 	}
 
 	protected void ZV_Notify(string title, string text)

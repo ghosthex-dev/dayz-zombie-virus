@@ -34,6 +34,22 @@ class ZV_Settings
 	// Show stage messages to the infected player
 	bool NotifyPlayer = true;
 
+	// Playable Zombie mode: if true, turning keeps the player alive as a feral infected instead of dying immediately.
+	// If false, the original behavior (player dies, AI zombie rises) is used.
+	bool PlayableZombie = true;
+	// Minutes a feral player can survive before the body finally collapses (0 = unlimited).
+	float PlayableZombieDurationMinutes = 15;
+	// AI zombies ignore turned players (true = horde camouflage).
+	bool PlayableZombieIgnoredByAI = true;
+	// Infinite sprint stamina for turned players (runner zombie speed).
+	bool PlayableZombieInfiniteStamina = true;
+	// Damage multiplier for feral melee attacks against survivors.
+	float PlayableZombieDamageMultiplier = 2.0;
+	// Health lost per minute while in feral state (starvation / decay).
+	float PlayableZombieHealthDrainPerMinute = 2.0;
+	// Health restored when consuming raw meat, guts, or survivor flesh.
+	float PlayableZombieHealthGainOnFeed = 25.0;
+
 	ref array<string> MaleZombies = new array<string>;
 	ref array<string> FemaleZombies = new array<string>;
 
@@ -77,6 +93,14 @@ class ZV_Settings
 			Stage3HealthDrainPerMinute = 0;
 		if (TurnDelaySeconds < 0)
 			TurnDelaySeconds = 0;
+		if (PlayableZombieDurationMinutes < 0)
+			PlayableZombieDurationMinutes = 0;
+		if (PlayableZombieDamageMultiplier < 0.5)
+			PlayableZombieDamageMultiplier = 0.5;
+		if (PlayableZombieHealthDrainPerMinute < 0)
+			PlayableZombieHealthDrainPerMinute = 0;
+		if (PlayableZombieHealthGainOnFeed < 0)
+			PlayableZombieHealthGainOnFeed = 0;
 		if (!MaleZombies)
 			MaleZombies = new array<string>;
 		if (!FemaleZombies)

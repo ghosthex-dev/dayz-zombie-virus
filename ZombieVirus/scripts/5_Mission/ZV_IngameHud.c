@@ -76,6 +76,8 @@ modded class IngameHud
 				return ARGB(255, 235, 130, 40);
 			case 3:
 				return ARGB(255, 220, 50, 40);
+			case 4:
+				return ARGB(255, 180, 0, 0);	// stage 4 = feral infected blood crimson
 		}
 		return ARGB(255, 220, 220, 220);	// stage 0, same grey as the vanilla icons
 	}

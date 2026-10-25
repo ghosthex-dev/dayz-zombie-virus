@@ -16,6 +16,8 @@ class ZV_SelfTest
 	protected int m_ZombiesBefore1;
 	protected int m_ZombiesBefore2;
 	protected int m_ZombiesBefore3;
+	protected PlayerBase m_Feral;
+	protected EntityAI m_Tool;
 
 	void Check(bool ok, string what)
 	{
@@ -171,7 +173,8 @@ class ZV_SelfTest
 		e.SetHealth("", "", 0);
 		Check(!ZV_Virus.Get().HasRecord(eKey), "record forgotten on death");
 
-		// turning, and rising after death from other causes
+		// turning, and rising after death from other causes (baseline non-playable mode)
+		s.PlayableZombie = false;
 		m_Turner = a;
 		m_TurnerPos = a.GetPosition();
 		m_ZombiesBefore1 = ZombiesNear(m_TurnerPos);
@@ -202,11 +205,79 @@ class ZV_SelfTest
 		Check(ZombiesNear(m_LatePos) > m_ZombiesBefore2, "zombie rose from a stage 2 death");
 		Check(ZombiesNear(m_EarlyPos) == m_ZombiesBefore3, "no zombie from a stage 0 death");
 
+		// ---- Playable Feral Zombie tests ----
+		ZV_Settings s = ZV_Virus.Get().GetSettings();
+		s.PlayableZombie = true;
+		m_Feral = Npc(8);
+		Check(m_Feral != null, "playable zombie candidate spawned");
+		if (m_Feral)
+		{
+			m_Tool = m_Feral.GetHumanInventory().CreateInHands("BandageDressing");
+			Check(m_Feral.GetItemInHands() != null, "candidate holds tool before turning");
+
+			m_Feral.ZV_Infect();
+			TickFor(m_Feral, 65);
+			Check(m_Feral.IsAlive(), "playable feral zombie stays alive upon turning");
+			Check(m_Feral.ZV_IsFeral(), "player entered feral state");
+			Check(m_Feral.ZV_GetHudStage() == 4, "HUD stage is 4 (blood crimson badge)");
+
+			g_Game.GetCallQueue(CALL_CATEGORY_GAMEPLAY).CallLater(AfterFeralTurn, 2000, false);
+		}
+		else
+		{
+			Finish();
+		}
+	}
+
+	void AfterFeralTurn()
+	{
+		Check(m_Feral.GetItemInHands() == null, "weapons/tools dropped upon turning");
+
+		if (m_Tool)
+			Check(!m_Feral.CanReceiveItemIntoHands(m_Tool), "feral cannot hold weapons/tools");
+
+		ItemBase meat = ItemBase.Cast(g_Game.CreateObjectEx("CowSteakMeat", m_Feral.GetPosition(), ECE_PLACE_ON_SURFACE));
+		Check(meat != null, "raw meat spawned");
+		if (meat)
+		{
+			Check(m_Feral.CanReceiveItemIntoHands(meat), "feral can hold raw meat");
+
+			m_Feral.AddHealth("", "Health", -30);
+			float feralHpBefore = m_Feral.GetHealth("", "Health");
+			PlayerConsumeData cd = new PlayerConsumeData();
+			cd.m_Source = meat;
+			cd.m_Amount = 100;
+			cd.m_Agents = 10;
+			m_Feral.Consume(cd);
+			Check(m_Feral.GetHealth("", "Health") > feralHpBefore, "consuming meat heals feral player");
+			Check(cd.m_Agents == 0, "feral digestive system purges food agents");
+			meat.Delete();
+		}
+
+		ZombieBase testZmb = ZombieBase.Cast(g_Game.CreateObjectEx("ZmbM_HermitSkinny_Beige", m_Feral.GetPosition() + Vector(2, 0, 0), ECE_PLACE_ON_SURFACE));
+		if (testZmb)
+		{
+			Check(!m_Feral.CanBeTargetedByAI(testZmb), "AI zombie cannot target feral player (horde camouflage)");
+			testZmb.Delete();
+		}
+
+		PlayerBase victim = Npc(9);
+		if (victim)
+		{
+			Check(!victim.ZV_IsInfected(), "victim starts uninfected");
+			victim.EEHitBy(null, 0, m_Feral, 0, "Torso", "MeleeDamage", victim.GetPosition(), 1.0);
+			Check(victim.ZV_IsInfected(), "victim infected by feral attack");
+			victim.SetHealth("", "", 0);
+		}
+
+		m_Feral.SetHealth("", "", 0);
+		Check(!m_Feral.ZV_IsFeral(), "feral state cleared on death");
+
 		// a real zombie next to a fresh survivor: only reported, AI may ignore an unplayed character
 		m_Bitten = Npc(7);
 		vector zpos = m_Bitten.GetPosition() + Vector(1.5, 0, 0);
 		g_Game.CreateObjectEx("ZmbM_HermitSkinny_Beige", zpos, ECE_PLACE_ON_SURFACE | ECE_INITAI | ECE_EQUIP_ATTACHMENTS);
-		g_Game.GetCallQueue(CALL_CATEGORY_GAMEPLAY).CallLater(AfterAttack, 40000, false);
+		g_Game.GetCallQueue(CALL_CATEGORY_GAMEPLAY).CallLater(AfterAttack, 15000, false);
 	}
 
 	void AfterAttack()

@@ -5,6 +5,8 @@ class ZV_Record
 	bool Infected;
 	float Progress;		// 0..1, 1 = turns
 	float Immunity;		// seconds left
+	bool Feral;
+	float FeralTime;
 }
 
 class ZV_SaveFile
@@ -141,7 +143,7 @@ class ZV_Virus
 		string id = player.ZV_Key();
 		if (id == "")
 			return;
-		if (!player.ZV_IsInfected() && player.ZV_GetImmunity() <= 0)
+		if (!player.ZV_IsInfected() && player.ZV_GetImmunity() <= 0 && !player.ZV_IsFeral())
 		{
 			if (m_Records.Contains(id))
 			{
@@ -160,6 +162,8 @@ class ZV_Virus
 		rec.Infected = player.ZV_IsInfected();
 		rec.Progress = player.ZV_GetProgress();
 		rec.Immunity = player.ZV_GetImmunity();
+		rec.Feral = player.ZV_IsFeral();
+		rec.FeralTime = player.ZV_GetFeralTimer();
 		m_Dirty = true;
 	}
 
@@ -168,7 +172,7 @@ class ZV_Virus
 	{
 		ZV_Record rec = m_Records.Get(player.ZV_Key());
 		if (rec)
-			player.ZV_SetState(rec.Infected, rec.Progress, rec.Immunity);
+			player.ZV_SetState(rec.Infected, rec.Progress, rec.Immunity, rec.Feral, rec.FeralTime);
 	}
 
 	bool HasRecord(string id)
