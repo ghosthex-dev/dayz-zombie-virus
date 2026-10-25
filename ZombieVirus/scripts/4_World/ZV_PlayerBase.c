@@ -102,7 +102,7 @@ modded class PlayerBase
 				zmb.GetTransform(tmTarget);
 				GetTransform(tmPlayer);
 				vector fwdDir = zmb.GetDirection();
-				tmPlayer[3] = tmTarget[3] - (fwdDir * 1.2);
+				tmPlayer[3] = tmTarget[3] - (fwdDir * 1.2) - "0 1.0 0";
 				Math3D.MatrixInvMultiply4(tmTarget, tmPlayer, tmLocal);
 				LinkToLocalSpaceOf(zmb, tmLocal);
 				dBodyEnableGravity(this, false);
@@ -690,7 +690,7 @@ modded class PlayerBase
 			vector tmLocal[4];
 			GetTransform(tmPlayer);
 			zombie.GetTransform(tmTarget);
-			tmPlayer[3] = tmTarget[3] - (pDir * 1.2);
+			tmPlayer[3] = tmTarget[3] - (pDir * 1.2) - "0 1.0 0";
 			Math3D.MatrixInvMultiply4(tmTarget, tmPlayer, tmLocal);
 			LinkToLocalSpaceOf(zombie, tmLocal);
 			dBodyEnableGravity(this, false);
