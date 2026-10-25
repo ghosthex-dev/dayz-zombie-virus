@@ -58,7 +58,7 @@ modded class PlayerBase
 		if (GetGame().IsClient() || !GetGame().IsMultiplayer())
 		{
 			PPERequester_Drowning req = PPERequester_Drowning.Cast(PPERequesterBank.GetRequester(PPERequesterBank.REQ_DROWNING));
-			if (req && req.IsRunning())
+			if (req)
 				req.Stop();
 		}
 	}
