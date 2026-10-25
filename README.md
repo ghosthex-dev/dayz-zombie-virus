@@ -11,7 +11,7 @@ inject a **Z-Strain Antiviral** before it runs its course, you die and get back 
 | 1, Fever | 25–50 % | Occasional coughing and sneezing. |
 | 2, Severe | 50–80 % | Coughing, vomiting (empties the stomach), light pain. |
 | 3, Terminal | 80–100 % | Heavy pain, vomiting, manic laughter, shaking, blurred fever vision, slow health drain. |
-| Turned | 100 % | The player dies. A few seconds later a zombie stands up where they fell. |
+| Turned | 100 % | The player turns into a **playable feral zombie**! Hunt living survivors with lethal claw melee attacks, sprint with unlimited stamina, feed on raw meat/flesh to heal, and move unnoticed among wild infected hordes. (Can be toggled back to AI rise in settings). |
 
 \* By default the whole course takes 60 minutes of **online** time. The infection pauses while the player is logged out.
 
@@ -58,6 +58,13 @@ The stage messages use the same icon.
 | `RiseOnDeathMinStage` | 2 | Infected players who die of other causes at this stage or later also rise (4 = never) |
 | `DeleteBodyOnTurn` | false | Remove the corpse when the zombie rises (deletes the gear too) |
 | `NotifyPlayer` | true | Show the stage messages |
+| PlayableZombie | true | Turn into a playable feral zombie upon turning (false = classic AI rise) |
+| PlayableZombieDurationMinutes | 15 | Feral zombie duration before collapsing (0 = unlimited) |
+| PlayableZombieIgnoredByAI | true | Wild AI zombies ignore player-controlled zombies (horde camouflage) |
+| PlayableZombieInfiniteStamina | true | Unlimited sprint stamina while in feral form |
+| PlayableZombieDamageMultiplier | 2.0 | Melee claw attack damage multiplier against survivors |
+| PlayableZombieHealthDrainPerMinute | 2.0 | Passive health decay per minute while feral |
+| PlayableZombieHealthGainOnFeed | 25.0 | Health restored when consuming raw meat or survivor flesh |
 | `MaleZombies` / `FemaleZombies` | vanilla classes | Zombie classes that a turned male or female player becomes |
 
 ## Saved state

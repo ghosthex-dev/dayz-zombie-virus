@@ -25,8 +25,16 @@ Fever sets in. Mild coughing and sneezing begin. [i]"You feel feverish."[/i]
 Severe sickness. Periodic coughing, violent vomiting fits (emptying your stomach contents), and muscle pain. [i]"Your veins burn."[/i]
 [*] [b]Stage 3 — Terminal (80% – 100%)[/b] [i][Red Icon][/i]
 Critical condition. Heavy agony, fever blur vision, uncontrollable shaking, manic laughter, and steady health drain (-4 HP/min). [i]"You are losing yourself."[/i]
-[*] [b]Turned (100%)[/b]
-The survivor dies. After a brief 5-second delay, a zombie stands up from where they fell!
+[*] [b]Turned (100%) — Feral Zombie Transformation[/b]
+By default, you do not simply die—you [b]become the zombie[/b]! Take direct control of an infected creature and hunt the living:
+[list]
+[*] [b]Third-Person Camera:[/b] Perspective locks behind the driven zombie model with full mouse look.
+[*] [b]True Infected Movement:[/b] Responsive creature movement with infinite sprint stamina (runner zombie).
+[*] [b]Lethal Claw Attacks:[/b] Left-click to perform standing swipes or running leap attacks that deal heavy damage, induce severe bleeding, and guarantee 100% infection transmission to victims.
+[*] [b]Feeding & Survival:[/b] Consume raw meat, guts, or survivor flesh to heal your decaying body.
+[*] [b]Horde Camouflage:[/b] Wild AI infected recognize you as one of their own and ignore you.
+[*] [b]Configurable:[/b] Server owners can set feral duration (default: 15 min), toggle horde camouflage, tune damage, or disable playable mode ([code]"PlayableZombie": false[/code]) to have players die and rise as AI instead.
+[/list]
 [/list]
 
 [h3]Death, Loot, & Rising[/h3]
@@ -100,6 +108,13 @@ Edit [code]<server_profile>/ZombieVirus/settings.json[/code] to customize every 
     "RiseOnDeathMinStage": 2,
     "DeleteBodyOnTurn": false,
     "NotifyPlayer": true,
+    "PlayableZombie": true,
+    "PlayableZombieDurationMinutes": 15.0,
+    "PlayableZombieIgnoredByAI": true,
+    "PlayableZombieInfiniteStamina": true,
+    "PlayableZombieDamageMultiplier": 2.0,
+    "PlayableZombieHealthDrainPerMinute": 2.0,
+    "PlayableZombieHealthGainOnFeed": 25.0,
     "MaleZombies": [
         "ZmbM_HermitSkinny_Beige",
         "ZmbM_CitizenASkinny_Blue",
@@ -135,6 +150,13 @@ Edit [code]<server_profile>/ZombieVirus/settings.json[/code] to customize every 
 [*] [b]RiseOnDeathMinStage (Default: 2):[/b] Minimum stage (0 to 3) where dying of other causes (gunfire, cold, etc.) still spawns a zombie (set to 4 to disable).
 [*] [b]DeleteBodyOnTurn (Default: false):[/b] When true, the dead survivor's corpse and gear despawn when the zombie rises. When false, the corpse stays lootable.
 [*] [b]NotifyPlayer (Default: true):[/b] Displays stage notification popups to the player.
+[*] [b]PlayableZombie (Default: true):[/b] Enables playable feral zombie mode upon turning. If false, player dies and an AI zombie rises.
+[*] [b]PlayableZombieDurationMinutes (Default: 15.0):[/b] Survival duration for feral zombie body in minutes before expiring (0 = unlimited).
+[*] [b]PlayableZombieIgnoredByAI (Default: true):[/b] Wild AI zombies ignore player-controlled zombies (horde camouflage).
+[*] [b]PlayableZombieInfiniteStamina (Default: true):[/b] Feral zombie has unlimited sprint stamina (runner zombie).
+[*] [b]PlayableZombieDamageMultiplier (Default: 2.0):[/b] Melee attack damage multiplier against living survivors.
+[*] [b]PlayableZombieHealthDrainPerMinute (Default: 2.0):[/b] Passive health decay per minute while in feral form.
+[*] [b]PlayableZombieHealthGainOnFeed (Default: 25.0):[/b] Health restored when feeding on raw meat or survivor flesh.
 [*] [b]MaleZombies / FemaleZombies:[/b] Configurable array of zombie class names spawned when male or female survivors turn.
 [/list]
 
