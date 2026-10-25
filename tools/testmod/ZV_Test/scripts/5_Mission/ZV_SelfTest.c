@@ -220,6 +220,7 @@ class ZV_SelfTest
 			Check(m_Feral.IsAlive(), "playable feral zombie stays alive upon turning");
 			Check(m_Feral.ZV_IsFeral(), "player entered feral state");
 			Check(m_Feral.ZV_GetHudStage() == 4, "HUD stage is 4 (blood crimson badge)");
+			Check(m_Feral.ZV_GetPuppetZombie() != null, "puppet zombie spawned and linked to feral player");
 
 			g_Game.GetCallQueue(CALL_CATEGORY_GAMEPLAY).CallLater(AfterFeralTurn, 2000, false);
 		}
@@ -235,6 +236,11 @@ class ZV_SelfTest
 
 		if (m_Tool)
 			Check(!m_Feral.CanReceiveItemIntoHands(m_Tool), "feral cannot hold weapons/tools");
+
+		ZombieBase puppet = m_Feral.ZV_GetPuppetZombie();
+		Check(puppet != null && puppet.IsAlive(), "puppet zombie is active and alive");
+		if (puppet)
+			Check(puppet.ZV_GetDriver() == m_Feral, "puppet zombie identifies feral player as driver");
 
 		ItemBase meat = ItemBase.Cast(g_Game.CreateObjectEx("CowSteakMeat", m_Feral.GetPosition(), ECE_PLACE_ON_SURFACE));
 		Check(meat != null, "raw meat spawned");
@@ -262,16 +268,17 @@ class ZV_SelfTest
 		}
 
 		PlayerBase victim = Npc(9);
-		if (victim)
+		if (victim && puppet)
 		{
 			Check(!victim.ZV_IsInfected(), "victim starts uninfected");
-			victim.EEHitBy(null, 0, m_Feral, 0, "Torso", "MeleeDamage", victim.GetPosition(), 1.0);
-			Check(victim.ZV_IsInfected(), "victim infected by feral attack");
+			victim.EEHitBy(null, 0, puppet, 0, "Torso", "MeleeDamage", victim.GetPosition(), 1.0);
+			Check(victim.ZV_IsInfected(), "victim infected by player-controlled puppet zombie attack");
 			victim.SetHealth("", "", 0);
 		}
 
 		m_Feral.SetHealth("", "", 0);
 		Check(!m_Feral.ZV_IsFeral(), "feral state cleared on death");
+		Check(!puppet || !puppet.IsAlive(), "puppet zombie slain on player death");
 
 		// a real zombie next to a fresh survivor: only reported, AI may ignore an unplayed character
 		m_Bitten = Npc(7);

@@ -15,18 +15,88 @@ modded class PlayerBase
 	protected int m_ZV_HudStage = -1;	// synced copy of m_ZV_Stage for the owner's HUD
 	protected bool m_ZV_Feral;
 	protected float m_ZV_FeralTimer;
+	protected ZombieBase m_ZV_PuppetZombie;
+	protected bool m_ZV_HiddenMesh;
+	protected bool m_ZV_HiddenMeshClient;
 
 	override void Init()
 	{
 		super.Init();
 		RegisterNetSyncVariableInt("m_ZV_HudStage", -1, 4);
 		RegisterNetSyncVariableBool("m_ZV_Feral");
+		RegisterNetSyncVariableObject("m_ZV_PuppetZombie");
+		RegisterNetSyncVariableBool("m_ZV_HiddenMesh");
 	}
 
 	// Client side: stage shown on the HUD badge, -1 = not infected.
 	int ZV_GetHudStage()
 	{
 		return m_ZV_HudStage;
+	}
+
+	ZombieBase ZV_GetPuppetZombie()
+	{
+		return m_ZV_PuppetZombie;
+	}
+
+	override void EEItemAttached(EntityAI item, string slot_name)
+	{
+		super.EEItemAttached(item, slot_name);
+		if (m_ZV_HiddenMesh)
+			ZV_HideBodyParts(true);
+	}
+
+	override void OnVariablesSynchronized()
+	{
+		super.OnVariablesSynchronized();
+
+		if (m_ZV_HiddenMesh != m_ZV_HiddenMeshClient)
+		{
+			ZV_HideBodyParts(m_ZV_HiddenMesh);
+		}
+
+		if (m_ZV_Feral && m_ZV_PuppetZombie)
+		{
+			if (GetIdentity())
+			{
+				GetGame().SelectSpectator(GetIdentity(), "ZV_InfectedCamera", m_ZV_PuppetZombie.ModelToWorld("0 1.5 -1.5"));
+				ZV_InfectedCamera cam = ZV_InfectedCamera.Cast(Camera.GetCurrentCamera());
+				if (cam)
+					cam.SetTarget(m_ZV_PuppetZombie);
+			}
+		}
+		else if (!m_ZV_Feral && GetIdentity())
+		{
+			GetGame().SelectPlayer(GetIdentity(), this);
+		}
+	}
+
+	void ZV_HideBodyParts(bool state)
+	{
+		EntityAI bodypart;
+		int slot_id;
+		array<string> bodyparts = {"Gloves","Body","Legs","Feet","Head","Hips","pelvis","leftleg","rightleg","Back","Mask","Hands","HeadGear","Eyewear","Armband","Vest","Shoulder","Melee","Bow"};
+		array<int> clothingArray = new array<int>;
+
+		for (int i = 0; i < bodyparts.Count(); i++)
+		{
+			slot_id = InventorySlots.GetSlotIdFromString(bodyparts.Get(i));
+			bodypart = GetInventory().FindPlaceholderForSlot(slot_id);
+			clothingArray.Insert(slot_id);
+			if (bodypart)
+				bodypart.SetInvisible(state);
+
+			EntityAI gear = FindAttachmentBySlotName(bodyparts.Get(i));
+			if (gear)
+				gear.SetInvisible(state);
+
+			EntityAI hands = GetItemInHands();
+			if (hands)
+				hands.SetInvisible(state);
+		}
+		SetInvisibleRecursive(state, this, clothingArray);
+		SetInvisible(state);
+		m_ZV_HiddenMeshClient = state;
 	}
 
 	override void EEHitBy(TotalDamageResult damageResult, int damageType, EntityAI source, int component, string dmgZone, string ammo, vector modelPos, float speedCoef)
@@ -37,10 +107,12 @@ modded class PlayerBase
 		if (!g_Game.IsServer() || !IsAlive())
 			return;
 
+		ZV_Settings settings = ZV_Virus.Get().GetSettings();
+
+		// 1. Direct hit from another feral player character
 		PlayerBase feralAttacker = PlayerBase.Cast(source);
 		if (feralAttacker && feralAttacker.ZV_IsFeral())
 		{
-			ZV_Settings settings = ZV_Virus.Get().GetSettings();
 			ZV_Infect();
 			if (damageResult)
 			{
@@ -57,21 +129,49 @@ modded class PlayerBase
 			return;
 		}
 
-		if (!ZombieBase.Cast(source))
-			return;
-		// a blocked light attack only plays an animation
-		if (ammo == "Dummy_Light")
-			return;
-		if (damageResult && damageResult.GetHighestDamage("Health") <= 0 && damageResult.GetHighestDamage("Blood") <= 0)
-			return;
+		// 2. Hit from a zombie entity
+		ZombieBase zmb = ZombieBase.Cast(source);
+		if (zmb)
+		{
+			// Player-controlled puppet zombie attack: 100% virulent infection, heavy claw bleed & feed healing
+			if (zmb.ZV_GetDriver())
+			{
+				PlayerBase driver = PlayerBase.Cast(zmb.ZV_GetDriver());
+				ZV_Infect();
+				if (damageResult)
+				{
+					float zDmg = damageResult.GetHighestDamage("Health") * (settings.PlayableZombieDamageMultiplier - 1.0);
+					if (zDmg > 0)
+						AddHealth("", "Health", -zDmg);
+				}
+				BleedingSourcesManagerServer zbm = GetBleedingManagerServer();
+				if (zbm)
+				{
+					if (!zbm.AttemptAddBleedingSource(component))
+						zbm.AttemptAddBleedingSourceBySelection("Pelvis");
+				}
+				if (driver && driver.IsAlive())
+				{
+					driver.AddHealth("", "Health", settings.PlayableZombieHealthGainOnFeed);
+				}
+				Print("[ZV] Survivor " + ZV_Name() + " infected by player-controlled zombie driven by " + driver.ZV_Name());
+				return;
+			}
 
-		bool zvBlocked = false;
-		if (GetMeleeFightLogic() && GetMeleeFightLogic().IsInBlock())
-			zvBlocked = true;
-		bool zvWounded = false;
-		if (GetBleedingSourceCount() > zvBleedingBefore)
-			zvWounded = true;
-		ZV_OnZombieHit(zvBlocked, zvWounded);
+			// a blocked light attack only plays an animation
+			if (ammo == "Dummy_Light")
+				return;
+			if (damageResult && damageResult.GetHighestDamage("Health") <= 0 && damageResult.GetHighestDamage("Blood") <= 0)
+				return;
+
+			bool zvBlocked = false;
+			if (GetMeleeFightLogic() && GetMeleeFightLogic().IsInBlock())
+				zvBlocked = true;
+			bool zvWounded = false;
+			if (GetBleedingSourceCount() > zvBleedingBefore)
+				zvWounded = true;
+			ZV_OnZombieHit(zvBlocked, zvWounded);
+		}
 	}
 
 	override void OnScheduledTick(float deltaTime)
@@ -107,6 +207,20 @@ modded class PlayerBase
 			{
 				Print("[ZV] Feral player " + ZV_Name() + " was slain");
 				m_ZV_Feral = false;
+				if (m_ZV_PuppetZombie)
+				{
+					ZombieBase zmb = m_ZV_PuppetZombie;
+					m_ZV_PuppetZombie = null;
+					zmb.ZV_SetDriver(null);
+					if (zmb.IsAlive())
+						zmb.SetHealth("", "", 0);
+				}
+				UnlinkFromLocalSpace();
+				dBodyEnableGravity(this, true);
+				m_ZV_HiddenMesh = false;
+				ZV_HideBodyParts(false);
+				if (GetInventory())
+					GetInventory().UnlockInventory(LOCK_FROM_SCRIPT);
 			}
 			else if (!m_ZV_Turning && m_ZV_Infected && m_ZV_Stage >= s.RiseOnDeathMinStage)
 			{
@@ -350,6 +464,22 @@ modded class PlayerBase
 		m_ZV_Progress = 0;
 		m_ZV_Stage = -1;
 		m_ZV_SymptomTimer = 0;
+
+		if (m_ZV_PuppetZombie)
+		{
+			ZombieBase zmb = m_ZV_PuppetZombie;
+			m_ZV_PuppetZombie = null;
+			zmb.ZV_SetDriver(null);
+			if (zmb.IsAlive())
+				zmb.SetHealth("", "", 0);
+		}
+		UnlinkFromLocalSpace();
+		dBodyEnableGravity(this, true);
+		m_ZV_HiddenMesh = false;
+		ZV_HideBodyParts(false);
+		if (GetInventory())
+			GetInventory().UnlockInventory(LOCK_FROM_SCRIPT);
+
 		SetSynchDirty();
 	}
 
@@ -414,7 +544,6 @@ modded class PlayerBase
 		m_ZV_HudStage = 4;
 		m_ZV_Progress = 1.0;
 		m_ZV_FeralTimer = 0;
-		SetSynchDirty();
 
 		EntityAI inHands = GetItemInHands();
 		if (inHands)
@@ -431,9 +560,42 @@ modded class PlayerBase
 				ServerDropEntity(inHands);
 		}
 
+		if (GetInventory())
+			GetInventory().LockInventory(LOCK_FROM_SCRIPT);
+
+		// Spawn the physical puppet zombie
+		ZV_Settings s = ZV_Virus.Get().GetSettings();
+		string zcls = "ZmbM_HermitSkinny_Beige";
+		if (IsMale() && s.MaleZombies.Count() > 0)
+			zcls = s.MaleZombies.GetRandomElement();
+		else if (!IsMale() && s.FemaleZombies.Count() > 0)
+			zcls = s.FemaleZombies.GetRandomElement();
+
+		ZombieBase zombie = ZombieBase.Cast(g_Game.CreateObjectEx(zcls, GetPosition(), ECE_PLACE_ON_SURFACE | ECE_INITAI));
+		if (zombie)
+		{
+			zombie.SetOrientation(GetOrientation());
+			zombie.ZV_SetDriver(this);
+			m_ZV_PuppetZombie = zombie;
+
+			vector tmPlayer[4];
+			vector tmTarget[4];
+			vector tmLocal[4];
+			GetTransform(tmPlayer);
+			zombie.GetTransform(tmTarget);
+			tmPlayer[3] = tmTarget[3] + Vector(0, 1.2, -1.2);
+			Math3D.MatrixInvMultiply4(tmTarget, tmPlayer, tmLocal);
+			LinkToLocalSpaceOf(zombie, tmLocal);
+			dBodyEnableGravity(this, false);
+		}
+
+		m_ZV_HiddenMesh = true;
+		ZV_HideBodyParts(true);
+		SetSynchDirty();
+
 		DayZPlayerSyncJunctures.SendKuruRequest(this, 1.0);
 		ZV_Notify("You have turned.", "Your humanity is gone. You are now an infected. Hunt the living.");
-		Print("[ZV] " + ZV_Name() + " became a PLAYABLE FERAL ZOMBIE");
+		Print("[ZV] " + ZV_Name() + " became a PLAYABLE FERAL ZOMBIE (Puppet: " + zcls + ")");
 		ZV_Virus.Get().Store(this);
 		ZV_Virus.Get().Save();
 	}
@@ -497,7 +659,7 @@ modded class PlayerBase
 			NotificationSystem.SendNotificationToPlayerExtended(this, 8, title, text, ZV_ICON);
 	}
 
-	protected string ZV_Name()
+	string ZV_Name()
 	{
 		if (GetIdentity())
 			return GetIdentity().GetName() + " (" + GetIdentity().GetId() + ")";
