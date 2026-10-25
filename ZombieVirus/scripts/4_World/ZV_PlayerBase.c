@@ -89,7 +89,7 @@ modded class PlayerBase
 			#ifndef SERVER
 			#ifndef NO_GUI
 			PPERequester_Drowning dreq = PPERequester_Drowning.Cast(PPERequesterBank.GetRequester(PPERequesterBank.REQ_DROWNING));
-			if (dreq && dreq.IsRunning())
+			if (dreq)
 				dreq.Stop();
 			#endif
 			#endif
