@@ -143,11 +143,16 @@ modded class PlayerBase
 
 		int decaySec = GetHiddenSelectionIndex("decay_preload");
 		if (decaySec >= 0)
-			SetObjectTexture(decaySec, state ? "" : m_DecayedTexture);
+		{
+			if (state)
+				SetObjectTexture(decaySec, "");
+			else
+				SetObjectTexture(decaySec, m_DecayedTexture);
+		}
 
 		int personalitySec = GetHiddenSelectionIndex("personality");
 		if (personalitySec >= 0)
-			SetObjectTexture(personalitySec, state ? "" : "");
+			SetObjectTexture(personalitySec, "");
 
 		int headSlotId = InventorySlots.GetSlotIdFromString("Head");
 		EntityAI headEnt = GetInventory().FindPlaceholderForSlot(headSlotId);
@@ -156,13 +161,13 @@ modded class PlayerBase
 			headEnt.SetInvisible(state);
 			int headPers = headEnt.GetHiddenSelectionIndex("personality");
 			if (headPers >= 0)
-				headEnt.SetObjectTexture(headPers, state ? "" : "");
+				headEnt.SetObjectTexture(headPers, "");
 			int headHair = headEnt.GetHiddenSelectionIndex("hair");
 			if (headHair >= 0)
-				headEnt.SetObjectTexture(headHair, state ? "" : "");
+				headEnt.SetObjectTexture(headHair, "");
 			int headBeard = headEnt.GetHiddenSelectionIndex("beard");
 			if (headBeard >= 0)
-				headEnt.SetObjectTexture(headBeard, state ? "" : "");
+				headEnt.SetObjectTexture(headBeard, "");
 		}
 
 		EntityAI bodypart;
@@ -177,7 +182,7 @@ modded class PlayerBase
 				bodypart.SetInvisible(state);
 				int bpPers = bodypart.GetHiddenSelectionIndex("personality");
 				if (bpPers >= 0)
-					bodypart.SetObjectTexture(bpPers, state ? "" : "");
+					bodypart.SetObjectTexture(bpPers, "");
 			}
 
 			EntityAI gear = FindAttachmentBySlotName(bodyparts.Get(i));
