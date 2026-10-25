@@ -31,10 +31,19 @@ class ZV_InfectedCamera extends Camera
 	{
 		ZombieBase zombie = ZombieBase.Cast(m_CamTarget);
 		if (!zombie)
+		{
+			PlayerBase pb = PlayerBase.Cast(GetGame().GetPlayer());
+			if (pb)
+			{
+				m_CamTarget = pb.ZV_GetPuppetZombie();
+				zombie = ZombieBase.Cast(m_CamTarget);
+			}
+		}
+		if (!zombie)
 			return;
 
 		Input input = GetGame().GetInput();
-		SetPosition(zombie.ModelToWorld("0 1.5 -1.6"));
+		SetPosition(zombie.ModelToWorld("0 1.6 -1.8"));
 
 		float pitchDiff = input.LocalValue("UAAimDown") - input.LocalValue("UAAimUp");
 		vector newOrient = GetOrientation();

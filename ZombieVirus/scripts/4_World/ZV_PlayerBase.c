@@ -57,22 +57,45 @@ modded class PlayerBase
 
 		if (m_ZV_Feral && m_ZV_PuppetZombie)
 		{
-			if (GetIdentity())
+			if (!GetParent())
 			{
-				GetGame().SelectSpectator(GetIdentity(), "ZV_InfectedCamera", m_ZV_PuppetZombie.ModelToWorld("0 1.5 -1.5"));
-				ZV_InfectedCamera cam = ZV_InfectedCamera.Cast(Camera.GetCurrentCamera());
-				if (cam)
-					cam.SetTarget(m_ZV_PuppetZombie);
+				vector tmTarget[4];
+				vector tmPlayer[4];
+				vector tmLocal[4];
+				m_ZV_PuppetZombie.GetTransform(tmTarget);
+				GetTransform(tmPlayer);
+				tmPlayer[3] = tmTarget[3] + Vector(0, -25.0, 0);
+				Math3D.MatrixInvMultiply4(tmTarget, tmPlayer, tmLocal);
+				LinkToLocalSpaceOf(m_ZV_PuppetZombie, tmLocal);
+				dBodyEnableGravity(this, false);
 			}
+
+			GetGame().SelectSpectator(null, "ZV_InfectedCamera", m_ZV_PuppetZombie.ModelToWorld("0 1.6 -1.8"));
+			ZV_InfectedCamera cam = ZV_InfectedCamera.Cast(Camera.GetCurrentCamera());
+			if (cam)
+				cam.SetTarget(m_ZV_PuppetZombie);
 		}
-		else if (!m_ZV_Feral && GetIdentity())
+		else if (!m_ZV_Feral)
 		{
-			GetGame().SelectPlayer(GetIdentity(), this);
+			if (GetParent())
+			{
+				UnlinkFromLocalSpace();
+				dBodyEnableGravity(this, true);
+			}
+			GetGame().SelectPlayer(null, this);
 		}
 	}
 
 	void ZV_HideBodyParts(bool state)
 	{
+		int decaySec = GetHiddenSelectionIndex("decay_preload");
+		if (decaySec >= 0)
+			SetObjectTexture(decaySec, "");
+
+		int personalitySec = GetHiddenSelectionIndex("personality");
+		if (personalitySec >= 0)
+			SetObjectTexture(personalitySec, "");
+
 		EntityAI bodypart;
 		int slot_id;
 		array<string> bodyparts = {"Gloves","Body","Legs","Feet","Head","Hips","pelvis","leftleg","rightleg","Back","Mask","Hands","HeadGear","Eyewear","Armband","Vest","Shoulder","Melee","Bow"};
@@ -214,6 +237,7 @@ modded class PlayerBase
 					zmb.ZV_SetDriver(null);
 					if (zmb.IsAlive())
 						zmb.SetHealth("", "", 0);
+					SetPosition(zmb.GetPosition());
 				}
 				UnlinkFromLocalSpace();
 				dBodyEnableGravity(this, true);
@@ -221,6 +245,8 @@ modded class PlayerBase
 				ZV_HideBodyParts(false);
 				if (GetInventory())
 					GetInventory().UnlockInventory(LOCK_FROM_SCRIPT);
+				if (GetIdentity())
+					GetGame().SelectPlayer(GetIdentity(), this);
 			}
 			else if (!m_ZV_Turning && m_ZV_Infected && m_ZV_Stage >= s.RiseOnDeathMinStage)
 			{
@@ -444,15 +470,6 @@ modded class PlayerBase
 			m_ZV_HudStage = stage;
 			SetSynchDirty();
 		}
-		SymptomManager sm = GetSymptomManager();
-		if (!sm)
-			return;
-		bool blur = stage >= 3;
-		bool hadBlur = m_ZV_Stage >= 3;
-		if (blur && !hadBlur)
-			sm.QueueUpSecondarySymptom(SymptomIDs.SYMPTOM_FEVERBLUR);
-		else if (!blur && hadBlur)
-			sm.RemoveSecondarySymptom(SymptomIDs.SYMPTOM_FEVERBLUR);
 	}
 
 	protected void ZV_ClearInfection()
@@ -472,6 +489,7 @@ modded class PlayerBase
 			zmb.ZV_SetDriver(null);
 			if (zmb.IsAlive())
 				zmb.SetHealth("", "", 0);
+			SetPosition(zmb.GetPosition());
 		}
 		UnlinkFromLocalSpace();
 		dBodyEnableGravity(this, true);
@@ -479,6 +497,8 @@ modded class PlayerBase
 		ZV_HideBodyParts(false);
 		if (GetInventory())
 			GetInventory().UnlockInventory(LOCK_FROM_SCRIPT);
+		if (GetIdentity())
+			GetGame().SelectPlayer(GetIdentity(), this);
 
 		SetSynchDirty();
 	}
@@ -583,10 +603,15 @@ modded class PlayerBase
 			vector tmLocal[4];
 			GetTransform(tmPlayer);
 			zombie.GetTransform(tmTarget);
-			tmPlayer[3] = tmTarget[3] + Vector(0, 1.2, -1.2);
+			tmPlayer[3] = tmTarget[3] + Vector(0, -25.0, 0);
 			Math3D.MatrixInvMultiply4(tmTarget, tmPlayer, tmLocal);
 			LinkToLocalSpaceOf(zombie, tmLocal);
 			dBodyEnableGravity(this, false);
+
+			if (GetIdentity())
+			{
+				GetGame().SelectSpectator(GetIdentity(), "ZV_InfectedCamera", zombie.ModelToWorld("0 1.6 -1.8"));
+			}
 		}
 
 		m_ZV_HiddenMesh = true;
