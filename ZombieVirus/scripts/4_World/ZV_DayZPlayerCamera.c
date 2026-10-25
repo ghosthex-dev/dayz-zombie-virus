@@ -12,12 +12,20 @@ modded class DayZPlayerCamera3rdPerson
 		{
 			pOutResult.m_fInsideCamera = 0.0;
 			pOutResult.m_fDistance = 2.4;
+
 			ZombieBase zmb = pb.ZV_GetPuppetZombie();
 			if (!zmb && pb.GetParent() && pb.GetParent().IsInherited(ZombieBase))
 				zmb = ZombieBase.Cast(pb.GetParent());
 
 			if (zmb)
+			{
+				vector playerTransformWS[4];
+				m_pPlayer.GetTransform(playerTransformWS);
+				vector zombiePosWS = zmb.GetPosition();
+				zombiePosWS[1] = zombiePosWS[1] + 1.4; // Upper torso / shoulder level of zombie
+				pOutResult.m_CameraTM[3] = zombiePosWS.InvMultiply4(playerTransformWS);
 				pOutResult.m_CollisionIgnoreEntity = zmb;
+			}
 		}
 	}
 }

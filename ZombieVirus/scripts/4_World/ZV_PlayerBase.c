@@ -39,6 +39,21 @@ modded class PlayerBase
 		return m_ZV_PuppetZombie;
 	}
 
+	void ZV_SetPuppetZombie(ZombieBase zombie)
+	{
+		m_ZV_PuppetZombie = zombie;
+	}
+
+	override void SetDrowning(bool enable)
+	{
+		if (m_ZV_Feral)
+		{
+			super.SetDrowning(false);
+			return;
+		}
+		super.SetDrowning(enable);
+	}
+
 	override void OnDrowningStart()
 	{
 		if (m_ZV_Feral)
@@ -71,13 +86,21 @@ modded class PlayerBase
 
 		if (m_ZV_Feral)
 		{
+			#ifndef SERVER
+			#ifndef NO_GUI
+			PPERequester_Drowning dreq = PPERequester_Drowning.Cast(PPERequesterBank.GetRequester(PPERequesterBank.REQ_DROWNING));
+			if (dreq && dreq.IsRunning())
+				dreq.Stop();
+			#endif
+			#endif
+
 			ZombieBase zmb = m_ZV_PuppetZombie;
 			if (!zmb && GetParent() && GetParent().IsInherited(ZombieBase))
 				zmb = ZombieBase.Cast(GetParent());
 			if (!zmb)
 			{
 				array<Object> nearbyObjs = new array<Object>;
-				GetGame().GetObjectsAtPosition3D(GetPosition(), 5.0, nearbyObjs, null);
+				GetGame().GetObjectsAtPosition3D(GetPosition(), 10.0, nearbyObjs, null);
 				for (int noi = 0; noi < nearbyObjs.Count(); noi++)
 				{
 					if (nearbyObjs[noi].IsInherited(ZombieBase))
@@ -88,12 +111,16 @@ modded class PlayerBase
 				}
 			}
 
-			if (zmb && !GetParent())
+			if (zmb)
 			{
-				vector tmLocal[4];
-				Math3D.MatrixIdentity4(tmLocal);
-				LinkToLocalSpaceOf(zmb, tmLocal);
-				dBodyEnableGravity(this, false);
+				m_ZV_PuppetZombie = zmb;
+				if (!GetParent())
+				{
+					vector tmLocal[4];
+					Math3D.MatrixIdentity4(tmLocal);
+					LinkToLocalSpaceOf(zmb, tmLocal);
+					dBodyEnableGravity(this, false);
+				}
 			}
 
 			ZV_HideBodyParts(true);
@@ -671,8 +698,8 @@ modded class PlayerBase
 		vector pDir = GetDirection();
 		vector pOri = GetOrientation();
 
-		// Spawn zombie 1.8m in front of player so physics does not shove it offset
-		vector zSpawnPos = pPos + (pDir * 1.8);
+		// Spawn zombie 1.0m directly in front of player
+		vector zSpawnPos = pPos + (pDir * 1.0);
 		zSpawnPos[1] = g_Game.SurfaceY(zSpawnPos[0], zSpawnPos[2]);
 
 		ZombieBase zombie = ZombieBase.Cast(g_Game.CreateObjectEx(zcls, zSpawnPos, ECE_PLACE_ON_SURFACE | ECE_INITAI));
@@ -682,13 +709,14 @@ modded class PlayerBase
 			zombie.ZV_SetDriver(this);
 			m_ZV_PuppetZombie = zombie;
 
+			SetPosition(zSpawnPos);
+			SetOrientation(pOri);
+
 			// Attach player directly to zombie root in local space
 			vector tmLocal[4];
 			Math3D.MatrixIdentity4(tmLocal);
 			LinkToLocalSpaceOf(zombie, tmLocal);
 			dBodyEnableGravity(this, false);
-
-
 		}
 
 		m_ZV_HiddenMesh = true;
