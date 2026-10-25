@@ -39,24 +39,18 @@ modded class PlayerBase
 		return m_ZV_PuppetZombie;
 	}
 
+	override void OnDrowningStart()
+	{
+		if (m_ZV_Feral)
+			return;
+		super.OnDrowningStart();
+	}
+
 	override bool GetDrowningWaterLevelCheck()
 	{
-		return false;
-	}
-
-	override void SetDrowning(bool enable)
-	{
-		super.SetDrowning(false);
-	}
-
-	void ZV_StopDrowningPPE()
-	{
-		if (GetGame().IsClient() || !GetGame().IsMultiplayer())
-		{
-			PPERequester_Drowning req = PPERequester_Drowning.Cast(PPERequesterBank.GetRequester(PPERequesterBank.REQ_DROWNING));
-			if (req)
-				req.Stop();
-		}
+		if (m_ZV_Feral)
+			return false;
+		return super.GetDrowningWaterLevelCheck();
 	}
 
 	override void EEItemAttached(EntityAI item, string slot_name)
@@ -96,20 +90,13 @@ modded class PlayerBase
 
 			if (zmb && !GetParent())
 			{
-				vector tmTarget[4];
-				vector tmPlayer[4];
 				vector tmLocal[4];
-				zmb.GetTransform(tmTarget);
-				GetTransform(tmPlayer);
-				vector fwdDir = zmb.GetDirection();
-				tmPlayer[3] = tmTarget[3];
-				Math3D.MatrixInvMultiply4(tmTarget, tmPlayer, tmLocal);
+				Math3D.MatrixIdentity4(tmLocal);
 				LinkToLocalSpaceOf(zmb, tmLocal);
 				dBodyEnableGravity(this, false);
 			}
 
 			ZV_HideBodyParts(true);
-			ZV_StopDrowningPPE();
 		}
 		else if (!m_ZV_Feral)
 		{
@@ -119,12 +106,16 @@ modded class PlayerBase
 				dBodyEnableGravity(this, true);
 			}
 			ZV_HideBodyParts(false);
-			ZV_StopDrowningPPE();
 		}
 	}
 
 	void ZV_HideBodyParts(bool state)
 	{
+		if (state)
+			ClearFlags(EntityFlags.VISIBLE, true);
+		else
+			SetFlags(EntityFlags.VISIBLE, true);
+
 		SetInvisible(state);
 		if (state)
 			SetFaceTexture("");
@@ -146,6 +137,10 @@ modded class PlayerBase
 		EntityAI headEnt = GetInventory().FindPlaceholderForSlot(headSlotId);
 		if (headEnt)
 		{
+			if (state)
+				headEnt.ClearFlags(EntityFlags.VISIBLE, true);
+			else
+				headEnt.SetFlags(EntityFlags.VISIBLE, true);
 			headEnt.SetInvisible(state);
 			int headPers = headEnt.GetHiddenSelectionIndex("personality");
 			if (headPers >= 0)
@@ -167,6 +162,10 @@ modded class PlayerBase
 			bodypart = GetInventory().FindPlaceholderForSlot(slot_id);
 			if (bodypart)
 			{
+				if (state)
+					bodypart.ClearFlags(EntityFlags.VISIBLE, true);
+				else
+					bodypart.SetFlags(EntityFlags.VISIBLE, true);
 				bodypart.SetInvisible(state);
 				int bpPers = bodypart.GetHiddenSelectionIndex("personality");
 				if (bpPers >= 0)
@@ -175,11 +174,23 @@ modded class PlayerBase
 
 			EntityAI gear = FindAttachmentBySlotName(bodyparts.Get(i));
 			if (gear)
+			{
+				if (state)
+					gear.ClearFlags(EntityFlags.VISIBLE, true);
+				else
+					gear.SetFlags(EntityFlags.VISIBLE, true);
 				gear.SetInvisible(state);
+			}
 
 			EntityAI hands = GetItemInHands();
 			if (hands)
+			{
+				if (state)
+					hands.ClearFlags(EntityFlags.VISIBLE, true);
+				else
+					hands.SetFlags(EntityFlags.VISIBLE, true);
 				hands.SetInvisible(state);
+			}
 		}
 		SetInvisibleRecursive(state, this, null);
 		SetInvisible(state);
@@ -273,7 +284,6 @@ modded class PlayerBase
 		super.OnConnect();
 		if (g_Game.IsServer())
 			ZV_Virus.Get().Restore(this);
-		ZV_StopDrowningPPE();
 	}
 
 	override void OnDisconnect()
@@ -672,14 +682,9 @@ modded class PlayerBase
 			zombie.ZV_SetDriver(this);
 			m_ZV_PuppetZombie = zombie;
 
-			// Attach player 1.2m directly behind the zombie
-			vector tmPlayer[4];
-			vector tmTarget[4];
+			// Attach player directly to zombie root in local space
 			vector tmLocal[4];
-			GetTransform(tmPlayer);
-			zombie.GetTransform(tmTarget);
-			tmPlayer[3] = tmTarget[3];
-			Math3D.MatrixInvMultiply4(tmTarget, tmPlayer, tmLocal);
+			Math3D.MatrixIdentity4(tmLocal);
 			LinkToLocalSpaceOf(zombie, tmLocal);
 			dBodyEnableGravity(this, false);
 

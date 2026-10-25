@@ -1,5 +1,5 @@
 // Custom camera override for playable feral zombie mode.
-// Directly setting m_fInsideCamera = 1.0 causes the Enforce engine to cull the player character mesh.
+// Ensures 3rd person perspective stays at distance behind the puppet zombie without culling the zombie model.
 
 modded class DayZPlayerCamera3rdPerson
 {
@@ -10,7 +10,14 @@ modded class DayZPlayerCamera3rdPerson
 		PlayerBase pb = PlayerBase.Cast(m_pPlayer);
 		if (pb && pb.ZV_IsFeral())
 		{
-			pOutResult.m_fInsideCamera = 1.0;
+			pOutResult.m_fInsideCamera = 0.0;
+			pOutResult.m_fDistance = 2.4;
+			ZombieBase zmb = pb.ZV_GetPuppetZombie();
+			if (!zmb && pb.GetParent() && pb.GetParent().IsInherited(ZombieBase))
+				zmb = ZombieBase.Cast(pb.GetParent());
+
+			if (zmb)
+				pOutResult.m_CollisionIgnoreEntity = zmb;
 		}
 	}
 }
@@ -24,7 +31,7 @@ modded class DayZPlayerCamera1stPerson
 		PlayerBase pb = PlayerBase.Cast(m_pPlayer);
 		if (pb && pb.ZV_IsFeral())
 		{
-			pOutResult.m_fInsideCamera = 1.0;
+			pOutResult.m_fInsideCamera = 0.0;
 		}
 	}
 }

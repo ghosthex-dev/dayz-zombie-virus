@@ -13,19 +13,15 @@ modded class ZombieBase
 		return m_ZV_Driver;
 	}
 
-	override bool ModCommandHandlerAfter(float pDt, int pCurrentCommandID, bool pCurrentCommandFinished)
+	override bool ModCommandHandlerInside(float pDt, int pCurrentCommandID, bool pCurrentCommandFinished)
 	{
 		m_ZV_AIAgent = GetAIAgent();
-
-		DayZCreatureAIInputController controller;
-		GetGame().GameScript.CallFunction(this, "GetInputController", controller, 0);
-		DayZInfectedInputController inputController = DayZInfectedInputController.Cast(controller);
 
 		if (!m_ZV_Driver)
 		{
 			if (m_ZV_AIAgent)
 				m_ZV_AIAgent.SetKeepInIdle(false);
-			return super.ModCommandHandlerAfter(pDt, pCurrentCommandID, pCurrentCommandFinished);
+			return super.ModCommandHandlerInside(pDt, pCurrentCommandID, pCurrentCommandFinished);
 		}
 
 		if (m_ZV_AIAgent)
@@ -36,26 +32,66 @@ modded class ZombieBase
 		{
 			m_ZV_Driver = null;
 			SetHealth("", "", 0);
-			return true;
+			return false;
 		}
 
-		HumanInputController hic = driverPB.GetInputController();
-		if (!hic || !inputController)
-			return true;
+		UAInterface input = driverPB.GetInputInterface();
+		DayZInfectedInputController inputController = GetInputController();
+		if (!input || !inputController)
+			return false;
 
-		float headingAngle = hic.GetHeadingAngle();
-		inputController.OverrideHeading(true, headingAngle);
+		// Steering: mouse horizontal aim delta and A/D keyboard strafe
+		float mouseX = input.SyncedValue_ID(UAAimRight) - input.SyncedValue_ID(UAAimLeft);
+		float keyX = input.SyncedValue_ID(UAMoveRight) - input.SyncedValue_ID(UAMoveLeft);
+		float turnInput = mouseX;
+		if (Math.AbsFloat(keyX) > 0.01)
+			turnInput = keyX;
+
+		float maxTurnSpeed = 120.0;
+		turnInput = Math.Clamp(turnInput * maxTurnSpeed * pDt, -180, 180);
+		if (input.SyncedValue_ID(UALookAround) > 0)
+			turnInput = 0;
+
+		float heading = GetOrientation()[0] + turnInput;
 		inputController.OverrideTurnSpeed(true, Math.PI2 / pDt);
+		inputController.OverrideHeading(true, heading * Math.DEG2RAD);
 
-		float plrSpeed;
-		vector plrDir;
-		hic.GetMovement(plrSpeed, plrDir);
-		inputController.OverrideMovementSpeed(true, plrSpeed);
+		// Movement forward / backward / sprint
+		bool isMoveFwd = input.SyncedValue_ID(UAMoveForward) > 0;
+		bool isMoveBack = input.SyncedValue_ID(UAMoveBack) > 0;
+		bool isSprint = input.SyncedValue_ID(UATurbo) > 0;
+		bool isJog = input.SyncedValue_ID(UAWalkRunTemp) > 0;
 
-		// Left click / melee attack
-		if (hic.IsUseButton())
+		float fSpeed = 0.0;
+		int iAlert = 0;
+		float fAlert = 0.0;
+
+		if (isMoveFwd)
 		{
-			EntityAI target = ZV_FindTargetInFront(7.0, 50.0);
+			iAlert = 3;
+			fAlert = 1.0;
+			if (isSprint)
+				fSpeed = 3.0; // sprint
+			else if (isJog)
+				fSpeed = 2.0; // run
+			else
+				fSpeed = 2.0; // responsive jog default
+		}
+		else if (isMoveBack)
+		{
+			iAlert = 3;
+			fAlert = 1.0;
+			fSpeed = 1.0; // walk back
+		}
+
+		inputController.OverrideMovementSpeed(true, fSpeed);
+		inputController.OverrideAlertLevel(true, true, iAlert, fAlert);
+
+		// Melee Attack (Left Click or Default Action)
+		bool isAttack = (input.SyncedValue_ID(UAFire) > 0) || (input.SyncedValue_ID(UADefaultAction) > 0);
+		if (isAttack && m_AttackCooldownTime <= 0 && pCurrentCommandID != DayZInfectedConstants.COMMANDID_ATTACK)
+		{
+			EntityAI target = ZV_FindTargetInFront(4.0, 60.0);
 			if (target)
 			{
 				m_ActualTarget = target;
@@ -68,10 +104,10 @@ modded class ZombieBase
 
 				if (m_ActualAttackType)
 				{
-					StartCommand_Attack(m_ActualTarget, m_ActualAttackType.m_Type, 2);
+					StartCommand_Attack(m_ActualTarget, m_ActualAttackType.m_Type, m_ActualAttackType.m_Subtype);
+					m_AttackCooldownTime = m_ActualAttackType.m_Cooldown;
 				}
 			}
-			return true;
 		}
 
 		return true;
