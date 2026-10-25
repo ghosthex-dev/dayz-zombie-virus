@@ -693,9 +693,12 @@ modded class PlayerBase
 
 		m_ZV_HiddenMesh = true;
 		ZV_HideBodyParts(true);
-		SetSynchDirty();
 
-		DayZPlayerSyncJunctures.SendKuruRequest(this, 1.0);
+		SymptomManager sm = GetSymptomManager();
+		if (sm)
+			sm.CleanUpPrimaryQueue();
+
+		SetSynchDirty();
 		ZV_Notify("You have turned.", "Your humanity is gone. You are now an infected. Hunt the living.");
 		Print("[ZV] " + ZV_Name() + " became a PLAYABLE FERAL ZOMBIE (Puppet: " + zcls + ")");
 		ZV_Virus.Get().Store(this);
@@ -714,8 +717,6 @@ modded class PlayerBase
 		if (m_ZV_SymptomTimer >= 15)
 		{
 			m_ZV_SymptomTimer = 0;
-			if (Math.RandomFloat01() < 0.4)
-				DayZPlayerSyncJunctures.SendKuruRequest(this, 0.5);
 		}
 
 		if (s.PlayableZombieDurationMinutes > 0 && m_ZV_FeralTimer >= s.PlayableZombieDurationMinutes * 60)
@@ -766,5 +767,18 @@ modded class PlayerBase
 		if (GetIdentity())
 			return GetIdentity().GetName() + " (" + GetIdentity().GetId() + ")";
 		return GetType() + " " + GetID();
+	}
+}
+
+modded class SymptomManager
+{
+	override void OnTick(float deltatime, int pCurrentCommandID, HumanMovementState movement_state)
+	{
+		if (m_Player && m_Player.ZV_IsFeral())
+		{
+			CleanUpPrimaryQueue();
+			return;
+		}
+		super.OnTick(deltatime, pCurrentCommandID, movement_state);
 	}
 }
