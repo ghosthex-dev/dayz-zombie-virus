@@ -1,169 +1,88 @@
-[h1]Zombie Virus (Z-Strain Infection)[/h1]
+[h1]Zombie Virus (Z-Strain Infection & Playable Zombie)[/h1]
 
-A zombie hit is no longer just a loss of health—it is a race against time. Every strike from an infected carries a risk of transmission with the deadly [b]Z-strain virus[/b]. Without treatment, the pathogen takes hold, breaking your body down across four deteriorating stages until you collapse... only to rise again as one of them.
+Every strike from an infected carries a risk of transmission with the deadly [b]Z-strain virus[/b]. Without treatment, the pathogen takes hold, breaking your body down across four deteriorating stages. If left untreated, you succumb to the virus—and [b]take direct control of the newly risen infected![/b]
+
+100% standalone and vanilla-compatible. No third-party frameworks required.
 
 [hr][/hr]
 
-[h2]Survivors' Guide: How It Works[/h2]
+[h2]Features[/h2]
 
-[h3]Infection & Transmission[/h3]
+[b]Transmission & Progression (Default: 60 min incubation)[/b]
 [list]
-[*] [b]Damaging Hits:[/b] Any unblocked zombie hit that inflicts health or blood damage has an [b]8% chance[/b] to infect.
-[*] [b]Bleeding Wounds:[/b] If the hit opens a bleeding wound, the transmission chance spikes to [b]25%[/b].
-[*] [b]Blocking:[/b] Hits absorbed while blocking reduce the transmission chance to a quarter ([b]2%[/b] or [b]6.25%[/b] if wounded). Blocked light attacks deal no damage and cannot infect.
+[*] [b]Infection Chance:[/b] 8% on damaging hits; 25% if the hit causes bleeding. Blocking reduces chance by 75%.
+[*] [b]Status Tray HUD:[/b] Custom biohazard "Z" icon in the HUD tray tracks your stage (Grey = Incubation, Yellow = Fever, Orange = Severe Sickness, Red = Terminal).
+[*] [b]Symptoms:[/b] Burning wounds, fever, coughing, nausea, vomiting fits, manic laughter, and terminal health drain.
+[*] [b]Death at Stage 2+:[/b] Dying of gunfire, cold, or wounds while infected still reanimates your corpse. Gear remains lootable on the ground.
 [/list]
 
-[h3]Infection Stages (Default: 60 Online Minutes)[/h3]
-Infection progress only ticks while you are [b]logged in[/b] (it pauses safely on logout). A custom biohazard icon appears in your status icon tray (bottom right):
-
+[b]Playable Feral Zombie Mode (Enabled by default)[/b]
+When your humanity is lost, you take physical control of the infected!
 [list]
-[*] [b]Stage 0 — Incubation (0% – 25%)[/b] [i][Grey Icon][/i]
-No physical symptoms. You feel a burning sensation at the wound: [i]"The bite burns."[/i]
-[*] [b]Stage 1 — Fever (25% – 50%)[/b] [i][Yellow Icon][/i]
-Fever sets in. Mild coughing and sneezing begin. [i]"You feel feverish."[/i]
-[*] [b]Stage 2 — Severe (50% – 80%)[/b] [i][Orange Icon][/i]
-Severe sickness. Periodic coughing, violent vomiting fits (emptying your stomach contents), and muscle pain. [i]"Your veins burn."[/i]
-[*] [b]Stage 3 — Terminal (80% – 100%)[/b] [i][Red Icon][/i]
-Critical condition. Heavy agony, fever blur vision, uncontrollable shaking, manic laughter, and steady health drain (-4 HP/min). [i]"You are losing yourself."[/i]
-[*] [b]Turned (100%) — Feral Zombie Transformation[/b]
-By default, you do not simply die—you [b]become the zombie[/b]! Take direct control of an infected creature and hunt the living:
-[list]
-[*] [b]Third-Person Camera:[/b] Perspective locks behind the driven zombie model with full mouse look.
-[*] [b]True Infected Movement:[/b] Responsive creature movement with infinite sprint stamina (runner zombie).
-[*] [b]Lethal Claw Attacks:[/b] Left-click to perform standing swipes or running leap attacks that deal heavy damage, induce severe bleeding, and guarantee 100% infection transmission to victims.
-[*] [b]Feeding & Survival:[/b] Consume raw meat, guts, or survivor flesh to heal your decaying body.
-[*] [b]Horde Camouflage:[/b] Wild AI infected recognize you as one of their own and ignore you.
-[*] [b]Configurable:[/b] Server owners can set feral duration (default: 15 min), toggle horde camouflage, tune damage, or disable playable mode ([code]"PlayableZombie": false[/code]) to have players die and rise as AI instead.
-[/list]
+[*] [b]Locked 3rd-Person Camera:[/b] Smooth third-person perspective centered behind your driven zombie model.
+[*] [b]Infected Creature Physics:[/b] Responsive movement with unlimited runner sprint stamina.
+[*] [b]Lethal Claw Attacks:[/b] Left-click to execute standing swipes or running leap attacks. Strikes deal heavy damage, cause severe bleeding, and guarantee 100% infection transmission to living victims.
+[*] [b]Feed to Heal:[/b] Devour raw animal meat, guts, or survivor flesh to heal your decaying body.
+[*] [b]Horde Camouflage:[/b] Wild AI infected recognize you as part of the horde and ignore you.
+[*] [b]Feral Decay:[/b] Feral body lasts 15 minutes by default (fully configurable or unlimited).
+[*] [i]Prefer classic AI rise? Toggle [code]"PlayableZombie": false[/code] to have players die and an AI zombie spawn instead.[/i]
 [/list]
 
-[h3]Death, Loot, & Rising[/h3]
+[b]Cure & Prevention[/b]
 [list]
-[*] [b]Death at Stage 2 or 3:[/b] If an infected survivor is killed by bullets, wildlife, or starvation while at Stage 2 or higher, the virus still reanimates their corpse.
-[*] [b]Corpse & Gear Recovery:[/b] By default, the survivor's corpse remains on the ground next to the newly risen zombie with all gear intact, allowing teammates to avenge them and recover their loot.
-[/list]
-
-[h3]Treatment & Prevention[/h3]
-[list]
-[*] [b]Tetracycline / Antibiotics:[/b] Does not cure the Z-strain, but slows the progression speed by [b]50%[/b] while the antibiotic buff is active.
-[*] [b]Z-Strain Antiviral:[/b] An experimental autoinjector with a distinctive green label.
-[list]
-[*] [b]Full Cure:[/b] Completely cures the virus at any stage, removes all symptoms, and grants [b]30 minutes of total immunity[/b].
-[*] [b]Vaccine:[/b] Injected while healthy, it acts as a preventative vaccine providing 30 minutes of immunity against bites.
-[*] Can be self-administered or injected into other players.
-[*] Spawns as rare medical loot in hospitals and military medical tents.
-[/list]
+[*] [b]Z-Strain Antiviral:[/b] Rare military/medical autoinjector with a distinctive green label. Clears the virus at any stage, removes all symptoms, and grants [b]30 minutes of complete bite immunity[/b].
+[*] [b]Vaccine Function:[/b] Healthy players can inject it preventatively for 30 minutes of bite immunity.
+[*] [b]Tetracycline:[/b] Slows virus progression by 50% while active.
 [/list]
 
 [hr][/hr]
 
-[h2]Server Owners: Installation Guide[/h2]
+[h2]Server Installation[/h2]
 
-[b]Zombie Virus[/b] is 100% standalone and vanilla-compatible. It requires no external frameworks or third-party mods.
-
-[h3]Step 1: Install Mod & Key[/h3]
 [olist]
-[*] Copy the [code]@ZombieVirus[/code] folder to your server root.
-[*] Copy the public key [code]@ZombieVirus/keys/GhostHex.bikey[/code] into your server's root [code]keys/[/code] directory.
-[*] Add [code]-mod=@ZombieVirus[/code] to your server launch parameters.
-[/olist]
-
-[h3]Step 2: Add Antiviral Loot Spawns (Central Economy)[/h3]
-[olist]
-[*] Copy [code]zv_types.xml[/code] (located inside [code]ServerFiles/[/code]) into your mission folder, for example:
-[code]mpmissions/dayzOffline.chernarusplus/zombievirus/zv_types.xml[/code]
-[*] Register it in [code]cfgeconomycore.xml[/code] right before [code]</economycore>[/code]:
+[*] Copy [code]@ZombieVirus[/code] to your server root and [code]@ZombieVirus/keys/GhostHex.bikey[/code] to your [code]keys/[/code] folder.
+[*] Add [code]-mod=@ZombieVirus[/code] to your server startup line.
+[*] Copy [code]ServerFiles/zv_types.xml[/code] to your mission folder (e.g. [code]mpmissions/dayzOffline.chernarusplus/zombievirus/zv_types.xml[/code]) and register it in [code]cfgeconomycore.xml[/code]:
 [code]
 <ce folder="zombievirus">
     <file name="zv_types.xml" type="types" />
 </ce>
 [/code]
-[i](Alternatively, you can paste the [code]<type name="ZV_Antiviral">[/code] block directly into your mission's [code]db/types.xml[/code]).[/i]
+[*] Start the server once to generate [code]<server_profile>/ZombieVirus/settings.json[/code].
 [/olist]
-
-[h3]Step 3: First Startup[/h3]
-Start the server once. The mod will automatically create its default configuration file at:
-[code]<server_profile>/ZombieVirus/settings.json[/code]
 
 [hr][/hr]
 
-[h2]Configuration Guide ([code]settings.json[/code])[/h2]
+[h2]Configuration (settings.json)[/h2]
 
-Edit [code]<server_profile>/ZombieVirus/settings.json[/code] to customize every aspect of the virus:
+Located at [code]<server_profile>/ZombieVirus/settings.json[/code]:
 
-[code]
-{
-    "Version": 1,
-    "InfectionChance": 0.08,
-    "InfectionChanceIfWounded": 0.25,
-    "BlockedHitMultiplier": 0.25,
-    "IncubationMinutes": 60.0,
-    "Stage1At": 0.25,
-    "Stage2At": 0.5,
-    "Stage3At": 0.8,
-    "AntibioticsSpeedMultiplier": 0.5,
-    "CureImmunityMinutes": 30.0,
-    "Stage3HealthDrainPerMinute": 4.0,
-    "TurnDelaySeconds": 5.0,
-    "RiseOnDeathMinStage": 2,
-    "DeleteBodyOnTurn": false,
-    "NotifyPlayer": true,
-    "PlayableZombie": true,
-    "PlayableZombieDurationMinutes": 15.0,
-    "PlayableZombieIgnoredByAI": true,
-    "PlayableZombieInfiniteStamina": true,
-    "PlayableZombieDamageMultiplier": 2.0,
-    "PlayableZombieHealthDrainPerMinute": 2.0,
-    "PlayableZombieHealthGainOnFeed": 25.0,
-    "MaleZombies": [
-        "ZmbM_HermitSkinny_Beige",
-        "ZmbM_CitizenASkinny_Blue",
-        "ZmbM_CitizenBFat_Red",
-        "ZmbM_HikerSkinny_Green",
-        "ZmbM_Jacket_black",
-        "ZmbM_MechanicSkinny_Grey",
-        "ZmbM_HandymanNormal_Blue",
-        "ZmbM_VillagerOld_Blue"
-    ],
-    "FemaleZombies": [
-        "ZmbF_CitizenANormal_Blue",
-        "ZmbF_HikerSkinny_Grey",
-        "ZmbF_SurvivorNormal_Red",
-        "ZmbF_JournalistNormal_Green",
-        "ZmbF_ShortSkirt_grey",
-        "ZmbF_VillagerOld_White"
-    ]
-}
-[/code]
-
-[h3]Setting Explanations[/h3]
 [list]
-[*] [b]InfectionChance (Default: 0.08):[/b] Base chance (0.0 to 1.0) for any damaging zombie hit to infect.
-[*] [b]InfectionChanceIfWounded (Default: 0.25):[/b] Chance when that hit also opens a bleeding wound.
-[*] [b]BlockedHitMultiplier (Default: 0.25):[/b] Multiplier applied when the player takes damage while in block stance.
-[*] [b]IncubationMinutes (Default: 60.0):[/b] Total online minutes from initial infection to turning.
-[*] [b]Stage1At / Stage2At / Stage3At (Defaults: 0.25 / 0.5 / 0.8):[/b] Threshold fractions of incubation where each stage triggers.
-[*] [b]AntibioticsSpeedMultiplier (Default: 0.5):[/b] Progress speed multiplier while Tetracycline is active (0.5 = progresses at half speed; 1.0 = normal speed).
-[*] [b]CureImmunityMinutes (Default: 30.0):[/b] Minutes of bite immunity granted after taking a Z-Strain Antiviral.
-[*] [b]Stage3HealthDrainPerMinute (Default: 4.0):[/b] Health points lost per minute during terminal Stage 3 (players have 100 HP).
-[*] [b]TurnDelaySeconds (Default: 5.0):[/b] Seconds between death and the new zombie standing up.
-[*] [b]RiseOnDeathMinStage (Default: 2):[/b] Minimum stage (0 to 3) where dying of other causes (gunfire, cold, etc.) still spawns a zombie (set to 4 to disable).
-[*] [b]DeleteBodyOnTurn (Default: false):[/b] When true, the dead survivor's corpse and gear despawn when the zombie rises. When false, the corpse stays lootable.
-[*] [b]NotifyPlayer (Default: true):[/b] Displays stage notification popups to the player.
-[*] [b]PlayableZombie (Default: true):[/b] Enables playable feral zombie mode upon turning. If false, player dies and an AI zombie rises.
-[*] [b]PlayableZombieDurationMinutes (Default: 15.0):[/b] Survival duration for feral zombie body in minutes before expiring (0 = unlimited).
-[*] [b]PlayableZombieIgnoredByAI (Default: true):[/b] Wild AI zombies ignore player-controlled zombies (horde camouflage).
-[*] [b]PlayableZombieInfiniteStamina (Default: true):[/b] Feral zombie has unlimited sprint stamina (runner zombie).
-[*] [b]PlayableZombieDamageMultiplier (Default: 2.0):[/b] Melee attack damage multiplier against living survivors.
-[*] [b]PlayableZombieHealthDrainPerMinute (Default: 2.0):[/b] Passive health decay per minute while in feral form.
-[*] [b]PlayableZombieHealthGainOnFeed (Default: 25.0):[/b] Health restored when feeding on raw meat or survivor flesh.
-[*] [b]MaleZombies / FemaleZombies:[/b] Configurable array of zombie class names spawned when male or female survivors turn.
+[*] [b]InfectionChance (0.08):[/b] Base infection chance (0.0 to 1.0) on damaging hits.
+[*] [b]InfectionChanceIfWounded (0.25):[/b] Infection chance if the hit causes bleeding.
+[*] [b]BlockedHitMultiplier (0.25):[/b] Multiplier when hit while blocking.
+[*] [b]IncubationMinutes (60.0):[/b] Total online minutes until turned.
+[*] [b]Stage1At / Stage2At / Stage3At (0.25 / 0.5 / 0.8):[/b] Incubation progress thresholds for stages.
+[*] [b]AntibioticsSpeedMultiplier (0.5):[/b] Progression speed while Tetracycline is active.
+[*] [b]CureImmunityMinutes (30.0):[/b] Minutes of immunity granted by Z-Strain Antiviral.
+[*] [b]Stage3HealthDrainPerMinute (4.0):[/b] Health drain per minute in terminal Stage 3.
+[*] [b]TurnDelaySeconds (5.0):[/b] Seconds before rising as an infected.
+[*] [b]RiseOnDeathMinStage (2):[/b] Minimum stage where dying of other causes still reanimates (4 = disable).
+[*] [b]DeleteBodyOnTurn (false):[/b] If true, despawns corpse/gear upon turning.
+[*] [b]NotifyPlayer (true):[/b] Enables stage notification popups.
+[*] [b]PlayableZombie (true):[/b] Enables playable feral zombie mode upon turning.
+[*] [b]PlayableZombieDurationMinutes (15.0):[/b] Feral duration before body collapses (0 = unlimited).
+[*] [b]PlayableZombieIgnoredByAI (true):[/b] Wild AI infected ignore turned players.
+[*] [b]PlayableZombieInfiniteStamina (true):[/b] Unlimited sprint stamina while feral.
+[*] [b]PlayableZombieDamageMultiplier (2.0):[/b] Melee attack damage multiplier against survivors.
+[*] [b]PlayableZombieHealthDrainPerMinute (2.0):[/b] Health decay per minute while feral.
+[*] [b]PlayableZombieHealthGainOnFeed (25.0):[/b] Health gained from consuming meat/flesh.
+[*] [b]MaleZombies / FemaleZombies:[/b] Configurable array of zombie class names spawned on turn.
 [/list]
 
-[h3]Safe Persistence (No Character Corruption)[/h3]
-Active infections are stored in [code]<server_profile>/ZombieVirus/players.json[/code]. State is saved every 30 seconds, on logout, and during server shutdown. Because data is stored in its own dedicated JSON file rather than vanilla character database tables, adding, updating, or removing this mod will [b]never corrupt player characters or save files[/b].
+[b]Safe Persistence:[/b] Saved player infections are tracked in [code]ZombieVirus/players.json[/code] (saved every 30s and on disconnect). It never touches vanilla player character database tables and will never corrupt player saves.
 
 [hr][/hr]
 
 [h2]Repack & License[/h2]
-You are free to run this mod on your server, monetize with Bohemia Interactive approved monetization, or pack it into your server pack with credit to [b]GhostHex[/b].
+You are free to run this mod on your server, monetize under BI guidelines, or pack it into your server modpack with credit to [b]GhostHex[/b].
