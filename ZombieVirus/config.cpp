@@ -19,9 +19,10 @@ class CfgMods
 		author = "GhostHex";
 		version = "1.0";
 		type = "mod";
-		dependencies[] = {"World", "Mission"};
+		dependencies[] = {"Game", "World", "Mission"};
 		class defs
 		{
+			class gameScriptModule { value = ""; files[] = {"ZombieVirus/scripts/3_Game"}; };
 			class worldScriptModule { value = ""; files[] = {"ZombieVirus/scripts/4_World"}; };
 			class missionScriptModule { value = ""; files[] = {"ZombieVirus/scripts/5_Mission"}; };
 		};

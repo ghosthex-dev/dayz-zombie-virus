@@ -8,11 +8,20 @@ class ZV_InfectedCamera extends Camera
 	{
 		SetEventMask(EntityEvent.FRAME);
 		m_CamTarget = null;
+		SetActive(true);
+		Print("[ZV] ZV_InfectedCamera initialized and SetActive(true)");
+	}
+
+	void ~ZV_InfectedCamera()
+	{
+		SetActive(false);
+		Print("[ZV] ZV_InfectedCamera destroyed and SetActive(false)");
 	}
 
 	void SetTarget(Object target)
 	{
 		m_CamTarget = target;
+		Print("[ZV] ZV_InfectedCamera SetTarget: " + target);
 	}
 
 	override void EOnFrame(IEntity other, float timeSlice)
@@ -43,16 +52,15 @@ class ZV_InfectedCamera extends Camera
 			return;
 
 		Input input = GetGame().GetInput();
-		SetPosition(zombie.ModelToWorld("0 1.6 -1.8"));
+		
+		// Camera placed directly behind the zombie: 0 X, 1.7 Y (eye level), -2.2 Z (behind)
+		SetPosition(zombie.ModelToWorld("0 1.7 -2.2"));
 
 		float pitchDiff = input.LocalValue("UAAimDown") - input.LocalValue("UAAimUp");
 		vector newOrient = GetOrientation();
-		newOrient[0] = zombie.GetOrientation()[0];
-		newOrient[1] = newOrient[1] - Math.RAD2DEG * pitchDiff * timeSlice;
-		if (newOrient[1] < -89)
-			newOrient[1] = -89;
-		if (newOrient[1] > 89)
-			newOrient[1] = 89;
+		newOrient[0] = zombie.GetOrientation()[0]; // Heading locked to zombie's facing direction
+		newOrient[1] = Math.Clamp(newOrient[1] - Math.RAD2DEG * pitchDiff * timeSlice, -80, 80);
+		newOrient[2] = 0;
 
 		SetOrientation(newOrient);
 	}

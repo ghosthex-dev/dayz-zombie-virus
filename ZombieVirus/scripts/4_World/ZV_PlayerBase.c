@@ -41,16 +41,12 @@ modded class PlayerBase
 
 	override bool GetDrowningWaterLevelCheck()
 	{
-		if (m_ZV_Feral)
-			return false;
-		return super.GetDrowningWaterLevelCheck();
+		return false;
 	}
 
 	override void SetDrowning(bool enable)
 	{
-		if (m_ZV_Feral && enable)
-			return;
-		super.SetDrowning(enable);
+		super.SetDrowning(false);
 	}
 
 	void ZV_StopDrowningPPE()
@@ -88,16 +84,21 @@ modded class PlayerBase
 				vector tmLocal[4];
 				m_ZV_PuppetZombie.GetTransform(tmTarget);
 				GetTransform(tmPlayer);
-				tmPlayer[3] = tmTarget[3];
+				vector fwdDir = m_ZV_PuppetZombie.GetDirection();
+				tmPlayer[3] = tmTarget[3] - (fwdDir * 1.2);
 				Math3D.MatrixInvMultiply4(tmTarget, tmPlayer, tmLocal);
 				LinkToLocalSpaceOf(m_ZV_PuppetZombie, tmLocal);
 				dBodyEnableGravity(this, false);
 			}
 
-			GetGame().SelectSpectator(null, "ZV_InfectedCamera", m_ZV_PuppetZombie.ModelToWorld("0 1.6 -1.8"));
+			GetGame().SelectSpectator(null, "ZV_InfectedCamera", m_ZV_PuppetZombie.ModelToWorld("0 1.7 -2.2"));
 			ZV_InfectedCamera cam = ZV_InfectedCamera.Cast(Camera.GetCurrentCamera());
 			if (cam)
+			{
 				cam.SetTarget(m_ZV_PuppetZombie);
+				cam.SetActive(true);
+			}
+			ZV_HideBodyParts(true);
 			ZV_StopDrowningPPE();
 		}
 		else if (!m_ZV_Feral)
@@ -107,7 +108,11 @@ modded class PlayerBase
 				UnlinkFromLocalSpace();
 				dBodyEnableGravity(this, true);
 			}
+			ZV_InfectedCamera oldCam = ZV_InfectedCamera.Cast(Camera.GetCurrentCamera());
+			if (oldCam)
+				oldCam.SetActive(false);
 			GetGame().SelectPlayer(null, this);
+			ZV_HideBodyParts(false);
 			ZV_StopDrowningPPE();
 		}
 	}
@@ -115,6 +120,8 @@ modded class PlayerBase
 	void ZV_HideBodyParts(bool state)
 	{
 		SetInvisible(state);
+		if (state)
+			SetFaceTexture("");
 
 		int decaySec = GetHiddenSelectionIndex("decay_preload");
 		if (decaySec >= 0)
@@ -637,26 +644,35 @@ modded class PlayerBase
 		else if (!IsMale() && s.FemaleZombies.Count() > 0)
 			zcls = s.FemaleZombies.GetRandomElement();
 
-		ZombieBase zombie = ZombieBase.Cast(g_Game.CreateObjectEx(zcls, GetPosition(), ECE_PLACE_ON_SURFACE | ECE_INITAI));
+		vector pPos = GetPosition();
+		vector pDir = GetDirection();
+		vector pOri = GetOrientation();
+
+		// Spawn zombie 1.8m in front of player so physics does not shove it offset
+		vector zSpawnPos = pPos + (pDir * 1.8);
+		zSpawnPos[1] = g_Game.SurfaceY(zSpawnPos[0], zSpawnPos[2]);
+
+		ZombieBase zombie = ZombieBase.Cast(g_Game.CreateObjectEx(zcls, zSpawnPos, ECE_PLACE_ON_SURFACE | ECE_INITAI));
 		if (zombie)
 		{
-			zombie.SetOrientation(GetOrientation());
+			zombie.SetOrientation(pOri);
 			zombie.ZV_SetDriver(this);
 			m_ZV_PuppetZombie = zombie;
 
+			// Attach player 1.2m directly behind the zombie
 			vector tmPlayer[4];
 			vector tmTarget[4];
 			vector tmLocal[4];
 			GetTransform(tmPlayer);
 			zombie.GetTransform(tmTarget);
-			tmPlayer[3] = tmTarget[3];
+			tmPlayer[3] = tmTarget[3] - (pDir * 1.2);
 			Math3D.MatrixInvMultiply4(tmTarget, tmPlayer, tmLocal);
 			LinkToLocalSpaceOf(zombie, tmLocal);
 			dBodyEnableGravity(this, false);
 
 			if (GetIdentity())
 			{
-				GetGame().SelectSpectator(GetIdentity(), "ZV_InfectedCamera", zombie.ModelToWorld("0 1.6 -1.8"));
+				GetGame().SelectSpectator(GetIdentity(), "ZV_InfectedCamera", zombie.ModelToWorld("0 1.7 -2.2"));
 			}
 		}
 
