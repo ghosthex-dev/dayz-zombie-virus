@@ -258,6 +258,25 @@ def main(argv=None):
     if tools:
         key_signed = sign_pbo(tools, pbo_path, explicit_key)
     sign_str = (', signed with ' + key_signed + ' (public key in @ZombieVirus/keys/)') if key_signed else ', unsigned'
+    # Sync to DayZ client, DayZServer, and Workshop content directories
+    sync_dirs = [
+        r'C:\Program Files (x86)\Steam\steamapps\common\DayZ\@ZombieVirus\addons',
+        r'C:\Program Files (x86)\Steam\steamapps\common\DayZServer\@ZombieVirus\addons',
+        r'C:\Program Files (x86)\Steam\steamapps\workshop\content\221100\3825777569\Addons'
+    ]
+    for d in sync_dirs:
+        if os.path.isdir(d):
+            dst = os.path.join(d, os.path.basename(pbo_path))
+            if not os.path.exists(dst) or not os.path.samefile(pbo_path, dst):
+                shutil.copy2(pbo_path, dst)
+            if key_signed:
+                bisign_name = os.path.basename(pbo_path) + '.' + key_signed + '.bisign'
+                bisign_src = os.path.join(os.path.dirname(pbo_path), bisign_name)
+                bisign_dst = os.path.join(d, bisign_name)
+                if os.path.isfile(bisign_src) and (not os.path.exists(bisign_dst) or not os.path.samefile(bisign_src, bisign_dst)):
+                    shutil.copy2(bisign_src, bisign_dst)
+            print('synced build to: %s' % d)
+
     print('built %s (%d files, config %s%s)' % (pbo_path, n, 'binarized' if binarized else 'text', sign_str))
     return 0
 

@@ -75,27 +75,45 @@ modded class PlayerBase
 			ZV_HideBodyParts(m_ZV_HiddenMesh);
 		}
 
-		if (m_ZV_Feral && m_ZV_PuppetZombie)
+		if (m_ZV_Feral)
 		{
-			if (!GetParent())
+			ZombieBase zmb = m_ZV_PuppetZombie;
+			if (!zmb && GetParent() && GetParent().IsInherited(ZombieBase))
+				zmb = ZombieBase.Cast(GetParent());
+			if (!zmb)
+			{
+				array<Object> nearbyObjs = new array<Object>;
+				GetGame().GetObjectsAtPosition3D(GetPosition(), 5.0, nearbyObjs, null);
+				for (int noi = 0; noi < nearbyObjs.Count(); noi++)
+				{
+					if (nearbyObjs[noi].IsInherited(ZombieBase))
+					{
+						zmb = ZombieBase.Cast(nearbyObjs[noi]);
+						break;
+					}
+				}
+			}
+
+			if (zmb && !GetParent())
 			{
 				vector tmTarget[4];
 				vector tmPlayer[4];
 				vector tmLocal[4];
-				m_ZV_PuppetZombie.GetTransform(tmTarget);
+				zmb.GetTransform(tmTarget);
 				GetTransform(tmPlayer);
-				vector fwdDir = m_ZV_PuppetZombie.GetDirection();
+				vector fwdDir = zmb.GetDirection();
 				tmPlayer[3] = tmTarget[3] - (fwdDir * 1.2);
 				Math3D.MatrixInvMultiply4(tmTarget, tmPlayer, tmLocal);
-				LinkToLocalSpaceOf(m_ZV_PuppetZombie, tmLocal);
+				LinkToLocalSpaceOf(zmb, tmLocal);
 				dBodyEnableGravity(this, false);
 			}
 
-			GetGame().SelectSpectator(null, "ZV_InfectedCamera", m_ZV_PuppetZombie.ModelToWorld("0 1.7 -2.2"));
+			GetGame().SelectSpectator(null, "ZV_InfectedCamera", ModelToWorld("0 1.7 -2.2"));
 			ZV_InfectedCamera cam = ZV_InfectedCamera.Cast(Camera.GetCurrentCamera());
 			if (cam)
 			{
-				cam.SetTarget(m_ZV_PuppetZombie);
+				if (zmb)
+					cam.SetTarget(zmb);
 				cam.SetActive(true);
 			}
 			ZV_HideBodyParts(true);
@@ -125,11 +143,11 @@ modded class PlayerBase
 
 		int decaySec = GetHiddenSelectionIndex("decay_preload");
 		if (decaySec >= 0)
-			SetObjectTexture(decaySec, "");
+			SetObjectTexture(decaySec, state ? "" : m_DecayedTexture);
 
 		int personalitySec = GetHiddenSelectionIndex("personality");
 		if (personalitySec >= 0)
-			SetObjectTexture(personalitySec, "");
+			SetObjectTexture(personalitySec, state ? "" : "");
 
 		int headSlotId = InventorySlots.GetSlotIdFromString("Head");
 		EntityAI headEnt = GetInventory().FindPlaceholderForSlot(headSlotId);
@@ -138,27 +156,29 @@ modded class PlayerBase
 			headEnt.SetInvisible(state);
 			int headPers = headEnt.GetHiddenSelectionIndex("personality");
 			if (headPers >= 0)
-				headEnt.SetObjectTexture(headPers, "");
+				headEnt.SetObjectTexture(headPers, state ? "" : "");
 			int headHair = headEnt.GetHiddenSelectionIndex("hair");
 			if (headHair >= 0)
-				headEnt.SetObjectTexture(headHair, "");
+				headEnt.SetObjectTexture(headHair, state ? "" : "");
 			int headBeard = headEnt.GetHiddenSelectionIndex("beard");
 			if (headBeard >= 0)
-				headEnt.SetObjectTexture(headBeard, "");
+				headEnt.SetObjectTexture(headBeard, state ? "" : "");
 		}
 
 		EntityAI bodypart;
 		int slot_id;
 		array<string> bodyparts = {"Gloves","Body","Legs","Feet","Head","Hips","pelvis","leftleg","rightleg","Back","Mask","Hands","HeadGear","Eyewear","Armband","Vest","Shoulder","Melee","Bow"};
-		array<int> clothingArray = new array<int>;
-
 		for (int i = 0; i < bodyparts.Count(); i++)
 		{
 			slot_id = InventorySlots.GetSlotIdFromString(bodyparts.Get(i));
 			bodypart = GetInventory().FindPlaceholderForSlot(slot_id);
-			clothingArray.Insert(slot_id);
 			if (bodypart)
+			{
 				bodypart.SetInvisible(state);
+				int bpPers = bodypart.GetHiddenSelectionIndex("personality");
+				if (bpPers >= 0)
+					bodypart.SetObjectTexture(bpPers, state ? "" : "");
+			}
 
 			EntityAI gear = FindAttachmentBySlotName(bodyparts.Get(i));
 			if (gear)
@@ -168,7 +188,7 @@ modded class PlayerBase
 			if (hands)
 				hands.SetInvisible(state);
 		}
-		SetInvisibleRecursive(state, this, clothingArray);
+		SetInvisibleRecursive(state, this, null);
 		SetInvisible(state);
 		m_ZV_HiddenMeshClient = state;
 	}

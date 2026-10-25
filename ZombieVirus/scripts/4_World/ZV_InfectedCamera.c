@@ -44,7 +44,10 @@ class ZV_InfectedCamera extends Camera
 			PlayerBase pb = PlayerBase.Cast(GetGame().GetPlayer());
 			if (pb)
 			{
-				m_CamTarget = pb.ZV_GetPuppetZombie();
+				if (pb.GetParent() && pb.GetParent().IsInherited(ZombieBase))
+					m_CamTarget = pb.GetParent();
+				else
+					m_CamTarget = pb.ZV_GetPuppetZombie();
 				zombie = ZombieBase.Cast(m_CamTarget);
 			}
 		}
