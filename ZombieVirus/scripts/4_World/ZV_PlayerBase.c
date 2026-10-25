@@ -108,14 +108,6 @@ modded class PlayerBase
 				dBodyEnableGravity(this, false);
 			}
 
-			GetGame().SelectSpectator(null, "ZV_InfectedCamera", ModelToWorld("0 1.7 -2.2"));
-			ZV_InfectedCamera cam = ZV_InfectedCamera.Cast(Camera.GetCurrentCamera());
-			if (cam)
-			{
-				if (zmb)
-					cam.SetTarget(zmb);
-				cam.SetActive(true);
-			}
 			ZV_HideBodyParts(true);
 			ZV_StopDrowningPPE();
 		}
@@ -126,10 +118,6 @@ modded class PlayerBase
 				UnlinkFromLocalSpace();
 				dBodyEnableGravity(this, true);
 			}
-			ZV_InfectedCamera oldCam = ZV_InfectedCamera.Cast(Camera.GetCurrentCamera());
-			if (oldCam)
-				oldCam.SetActive(false);
-			GetGame().SelectPlayer(null, this);
 			ZV_HideBodyParts(false);
 			ZV_StopDrowningPPE();
 		}
@@ -695,10 +683,7 @@ modded class PlayerBase
 			LinkToLocalSpaceOf(zombie, tmLocal);
 			dBodyEnableGravity(this, false);
 
-			if (GetIdentity())
-			{
-				GetGame().SelectSpectator(GetIdentity(), "ZV_InfectedCamera", zombie.ModelToWorld("0 1.7 -2.2"));
-			}
+
 		}
 
 		m_ZV_HiddenMesh = true;
