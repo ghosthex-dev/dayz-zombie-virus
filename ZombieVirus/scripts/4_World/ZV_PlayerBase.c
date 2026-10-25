@@ -39,6 +39,30 @@ modded class PlayerBase
 		return m_ZV_PuppetZombie;
 	}
 
+	override bool GetDrowningWaterLevelCheck()
+	{
+		if (m_ZV_Feral)
+			return false;
+		return super.GetDrowningWaterLevelCheck();
+	}
+
+	override void SetDrowning(bool enable)
+	{
+		if (m_ZV_Feral && enable)
+			return;
+		super.SetDrowning(enable);
+	}
+
+	void ZV_StopDrowningPPE()
+	{
+		if (GetGame().IsClient() || !GetGame().IsMultiplayer())
+		{
+			PPERequester_Drowning req = PPERequester_Drowning.Cast(PPERequesterBank.GetRequester(PPERequesterBank.REQ_DROWNING));
+			if (req && req.IsRunning())
+				req.Stop();
+		}
+	}
+
 	override void EEItemAttached(EntityAI item, string slot_name)
 	{
 		super.EEItemAttached(item, slot_name);
@@ -64,7 +88,7 @@ modded class PlayerBase
 				vector tmLocal[4];
 				m_ZV_PuppetZombie.GetTransform(tmTarget);
 				GetTransform(tmPlayer);
-				tmPlayer[3] = tmTarget[3] + Vector(0, -25.0, 0);
+				tmPlayer[3] = tmTarget[3];
 				Math3D.MatrixInvMultiply4(tmTarget, tmPlayer, tmLocal);
 				LinkToLocalSpaceOf(m_ZV_PuppetZombie, tmLocal);
 				dBodyEnableGravity(this, false);
@@ -74,6 +98,7 @@ modded class PlayerBase
 			ZV_InfectedCamera cam = ZV_InfectedCamera.Cast(Camera.GetCurrentCamera());
 			if (cam)
 				cam.SetTarget(m_ZV_PuppetZombie);
+			ZV_StopDrowningPPE();
 		}
 		else if (!m_ZV_Feral)
 		{
@@ -83,11 +108,14 @@ modded class PlayerBase
 				dBodyEnableGravity(this, true);
 			}
 			GetGame().SelectPlayer(null, this);
+			ZV_StopDrowningPPE();
 		}
 	}
 
 	void ZV_HideBodyParts(bool state)
 	{
+		SetInvisible(state);
+
 		int decaySec = GetHiddenSelectionIndex("decay_preload");
 		if (decaySec >= 0)
 			SetObjectTexture(decaySec, "");
@@ -95,6 +123,22 @@ modded class PlayerBase
 		int personalitySec = GetHiddenSelectionIndex("personality");
 		if (personalitySec >= 0)
 			SetObjectTexture(personalitySec, "");
+
+		int headSlotId = InventorySlots.GetSlotIdFromString("Head");
+		EntityAI headEnt = GetInventory().FindPlaceholderForSlot(headSlotId);
+		if (headEnt)
+		{
+			headEnt.SetInvisible(state);
+			int headPers = headEnt.GetHiddenSelectionIndex("personality");
+			if (headPers >= 0)
+				headEnt.SetObjectTexture(headPers, "");
+			int headHair = headEnt.GetHiddenSelectionIndex("hair");
+			if (headHair >= 0)
+				headEnt.SetObjectTexture(headHair, "");
+			int headBeard = headEnt.GetHiddenSelectionIndex("beard");
+			if (headBeard >= 0)
+				headEnt.SetObjectTexture(headBeard, "");
+		}
 
 		EntityAI bodypart;
 		int slot_id;
@@ -209,6 +253,7 @@ modded class PlayerBase
 		super.OnConnect();
 		if (g_Game.IsServer())
 			ZV_Virus.Get().Restore(this);
+		ZV_StopDrowningPPE();
 	}
 
 	override void OnDisconnect()
@@ -367,6 +412,7 @@ modded class PlayerBase
 			m_ZV_HudStage = 4;
 			m_ZV_FeralTimer = feralTimer;
 			SetSynchDirty();
+			ZV_BecomeFeral();
 			return;
 		}
 		if (!infected)
@@ -603,7 +649,7 @@ modded class PlayerBase
 			vector tmLocal[4];
 			GetTransform(tmPlayer);
 			zombie.GetTransform(tmTarget);
-			tmPlayer[3] = tmTarget[3] + Vector(0, -25.0, 0);
+			tmPlayer[3] = tmTarget[3];
 			Math3D.MatrixInvMultiply4(tmTarget, tmPlayer, tmLocal);
 			LinkToLocalSpaceOf(zombie, tmLocal);
 			dBodyEnableGravity(this, false);
