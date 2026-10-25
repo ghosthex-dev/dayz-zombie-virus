@@ -43,17 +43,9 @@ modded class ZombieBase
 		if (!hic || !inputController)
 			return true;
 
-		UAInterface input = driverPB.GetInputInterface();
-		if (input)
-		{
-			float movementX = input.SyncedValue_ID(UAMoveRight) - input.SyncedValue_ID(UAMoveLeft);
-			float maxTurnSpeed = 100.0;
-			movementX = Math.Clamp(movementX * maxTurnSpeed * pDt, -180, 180);
-			float heading = GetOrientation()[0] + movementX;
-
-			inputController.OverrideHeading(true, heading * Math.DEG2RAD);
-			inputController.OverrideTurnSpeed(true, Math.PI2 / pDt);
-		}
+		float headingAngle = hic.GetHeadingAngle();
+		inputController.OverrideHeading(true, headingAngle);
+		inputController.OverrideTurnSpeed(true, Math.PI2 / pDt);
 
 		float plrSpeed;
 		vector plrDir;
